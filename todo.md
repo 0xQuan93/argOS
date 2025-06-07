@@ -57,3 +57,7 @@ Internal stimuli are how agents perceive their internal state (emotions, thought
 - [x] Implement !report command to trigger a report
 - [x] Create a reporting system to gather data and send reports
 - [x] Integrate reporting system into the simulation
+- [ ] Test the new Discord integration
+- [ ] Set up a new Discord channel connected to Hyperfy (pull info from project89.directory.hyperfy)
+- [ ] Establish designated repo for agent documentation
+- [ ] Plan future voice integration using Eleven Labs for voice channel access via the ArgOS Discord bot
