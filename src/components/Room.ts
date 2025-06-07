@@ -8,6 +8,7 @@ export const RoomTypeEnum = z.enum([
   "twitter",
   "private",
   "astral",
+  "system",
 ]);
 export type RoomType = z.infer<typeof RoomTypeEnum>;
 
