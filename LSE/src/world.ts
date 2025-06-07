@@ -62,3 +62,48 @@ export function getWorldState(world: World): string {
 
   return state;
 }
+
+export function getEntityNames(entityMap: Record<string, number>): string[] {
+  return Object.keys(entityMap);
+}
+
+export function describeEntity(
+  world: World,
+  entityMap: Record<string, number>,
+  entityName: string
+): string {
+  const eid = entityMap[entityName];
+  if (eid === undefined) {
+    return `Entity '${entityName}' not found`;
+  }
+
+  let desc = `Entity ${entityName} (ID: ${eid})\n`;
+
+  Object.entries(componentMap).forEach(([name, component]) => {
+    switch (name) {
+      case "Position": {
+        const pos = component as PositionComponent;
+        desc += `  Position: (${pos.x[eid]}, ${pos.y[eid]})\n`;
+        break;
+      }
+      case "Name":
+      case "Description":
+      case "Goal": {
+        const val = component as ValueComponent;
+        if (val.value[eid] !== undefined) {
+          desc += `  ${name}: ${val.value[eid]}\n`;
+        }
+        break;
+      }
+      case "Inventory": {
+        const inv = component as InventoryComponent;
+        if (inv.items[eid]) {
+          desc += `  Inventory: [${inv.items[eid].join(", ")}]\n`;
+        }
+        break;
+      }
+    }
+  });
+
+  return desc;
+}

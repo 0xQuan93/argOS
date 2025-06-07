@@ -30,6 +30,7 @@ export type GodState = {
       components: string[];
     };
   };
+  tasks: string[];
 };
 
 export function createGod(initialWorld?: World): GodState {
@@ -52,6 +53,7 @@ export function createGod(initialWorld?: World): GodState {
     mode: initialWorld ? ("interaction" as const) : ("world-building" as const),
     tools: {} as ReturnType<typeof createGodTools>,
     systems: {},
+    tasks: [],
   } as GodState;
 
   godState.tools = createGodTools(godState);
@@ -549,4 +551,8 @@ export function switchMode(
   newMode: "world-building" | "interaction"
 ): void {
   god.mode = newMode;
+}
+
+export function addTask(god: GodState, task: string): void {
+  god.tasks.push(task);
 }
