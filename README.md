@@ -158,6 +158,11 @@ The project includes several example scenarios:
 
 - `basic-conversation.ts`: Two agents engaging in basic interaction
 
+## Discord Monitoring Flow
+
+ArgOS can connect to a Discord channel and generate automated summaries.
+See `docs/DISCORD_REPORT_FLOW.md` for a step-by-step outline.
+
 ## Contributing
 
 This is an experimental project in active development. Feel free to explore and experiment with the codebase.
