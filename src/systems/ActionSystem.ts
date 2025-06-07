@@ -1,9 +1,23 @@
-import { query, setComponent, addEntity, addComponent, World } from "bitecs";
-import { Agent, Action, Room, OccupiesRoom, Memory } from "../components";
+import {
+  query,
+  setComponent,
+  addEntity,
+  addComponent,
+  World,
+  hasComponent,
+} from "bitecs";
+import {
+  Agent,
+  Action,
+  Room,
+  OccupiesRoom,
+  Memory,
+  ActionResultType,
+  Thought,
+} from "../components";
 import { logger } from "../utils/logger";
 import { createSystem, SystemConfig } from "./System";
 import { getAgentRoom } from "../utils/queries";
-import { ActionResult } from "../types/actions";
 import { Experience } from "../llm/agent-llm";
 
 // Helper to get or create private room for agent
@@ -50,7 +64,7 @@ export const ActionSystem = createSystem<SystemConfig>(
       if (!Action.availableTools[eid]) {
         logger.agent(eid, "Initializing available tools", agentName);
         setComponent(world, eid, Action, {
-          availableTools: runtime.getActionManager().getAvailableTools(),
+          availableTools: Action.availableTools[eid],
           pendingAction: Action.pendingAction[eid],
           lastActionTime: Action.lastActionTime[eid],
         });
@@ -79,20 +93,6 @@ export const ActionSystem = createSystem<SystemConfig>(
         agentName
       );
 
-      // Emit action event to appropriate room context
-      runtime.eventBus.emitRoomEvent(
-        roomEid,
-        "action",
-        {
-          action: pendingAction.tool,
-          reason: pendingAction.parameters.reason || "Taking action",
-          parameters: pendingAction.parameters,
-          agentName,
-          context: "room",
-        },
-        String(eid)
-      );
-
       // Execute the action
       const result = await runtime
         .getActionManager()
@@ -109,7 +109,7 @@ export const ActionSystem = createSystem<SystemConfig>(
           pendingAction.parameters,
           null,
           2
-        )}\nResult: ${result.message}`,
+        )}\nResult: ${result?.result}`,
         agentName
       );
 
@@ -120,8 +120,8 @@ export const ActionSystem = createSystem<SystemConfig>(
         {
           action: pendingAction.tool,
           parameters: pendingAction.parameters,
-          result: result.message,
-          success: result.success,
+          result: result?.result,
+          success: result?.success,
           agentName,
           context: "room",
           timestamp: Date.now(),
@@ -137,22 +137,31 @@ export const ActionSystem = createSystem<SystemConfig>(
         availableTools: Action.availableTools[eid],
       });
 
-      const experienceMessage = `${pendingAction.tool}: ${result.message}`;
-      const experience: Experience = {
-        type: "action",
-        content: experienceMessage,
-        timestamp: result.timestamp,
-      };
+      // Add action result to thought chain
+      if (hasComponent(world, eid, Thought)) {
+        const currentEntries = Thought.entries[eid] || [];
+        const newEntry = {
+          id: Thought.lastEntryId[eid] + 1,
+          timestamp: Date.now(),
+          type: "result",
+          content: result?.result || "Action completed with no result",
+          context: {
+            roomId: Room.id[roomEid],
+            metadata: {
+              action: pendingAction.tool,
+              parameters: pendingAction.parameters,
+              success: result?.success,
+            },
+          },
+        };
 
-      const oldExperiences = Memory.experiences[eid] || [];
-      const newExperiences = [...oldExperiences, experience];
+        setComponent(world, eid, Thought, {
+          entries: [...currentEntries, newEntry],
+          lastEntryId: newEntry.id,
+          lastUpdate: Date.now(),
+        });
+      }
 
-      setComponent(world, eid, Memory, {
-        experiences: newExperiences,
-      });
-
-      // Emit action experience event
-      runtime.eventBus.emitAgentEvent(eid, "experience", "action", experience);
       logger.agent(eid, "Action cycle completed", agentName);
     }
 

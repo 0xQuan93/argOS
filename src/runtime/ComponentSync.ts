@@ -25,6 +25,7 @@ import {
   Interaction,
   Goal,
   Plan,
+  Thought,
 } from "../components";
 import { logger } from "../utils/logger";
 import { AgentState } from "../types/state";
@@ -110,8 +111,6 @@ export class ComponentSync {
         if (params.lastUpdate) Memory.lastUpdate[eid] = params.lastUpdate;
         if (params.perceptions) Memory.perceptions[eid] = params.perceptions;
         if (params.experiences) Memory.experiences[eid] = params.experiences;
-        if (params.conversationState)
-          Memory.conversationState[eid] = params.conversationState;
         return params;
       }),
       observe(this.world, onGet(Memory), (eid) => ({
@@ -126,7 +125,6 @@ export class ComponentSync {
         delete Memory.lastUpdate[eid];
         delete Memory.perceptions[eid];
         delete Memory.experiences[eid];
-        delete Memory.conversationState[eid];
       })
     );
 
@@ -157,7 +155,7 @@ export class ComponentSync {
           // Validate action against available tools
           const tools = Action.availableTools[eid] || [];
           const isValidTool = tools.some(
-            (toolName: string) => toolName === params.pendingAction.tool
+            (tool) => tool === params.pendingAction.tool
           );
           if (!isValidTool) {
             logger.warn(
@@ -403,20 +401,18 @@ export class ComponentSync {
     // Plan sync
     this.observers.push(
       observe(this.world, onSet(Plan), (eid, params) => {
-        if (params.plans) Plan.plans[eid] = params.plans;
-        if (params.activePlanIds)
-          Plan.activePlanIds[eid] = params.activePlanIds;
-        if (params.lastUpdate) Plan.lastUpdate[eid] = params.lastUpdate;
+        if (params.plans !== undefined) {
+          Plan.plans[eid] = params.plans;
+        }
+        Plan.lastUpdate[eid] = Date.now();
         return params;
       }),
       observe(this.world, onGet(Plan), (eid) => ({
         plans: Plan.plans[eid] || [],
-        activePlanIds: Plan.activePlanIds[eid] || [],
         lastUpdate: Plan.lastUpdate[eid] || Date.now(),
       })),
       observe(this.world, onRemove(Plan), (eid) => {
         delete Plan.plans[eid];
-        delete Plan.activePlanIds[eid];
         delete Plan.lastUpdate[eid];
       })
     );
@@ -488,6 +484,30 @@ export class ComponentSync {
         lastProcessedTime: Perception.lastProcessedTime[eid] || 0,
         lastUpdate: Perception.lastUpdate[eid] || 0,
       }))
+    );
+
+    // Add Thought sync
+    this.observers.push(
+      observe(this.world, onSet(Thought), (eid, params) => {
+        if (params.entries !== undefined) {
+          Thought.entries[eid] = params.entries;
+        }
+        if (params.lastEntryId !== undefined) {
+          Thought.lastEntryId[eid] = params.lastEntryId;
+        }
+        Thought.lastUpdate[eid] = Date.now();
+        return params;
+      }),
+      observe(this.world, onGet(Thought), (eid) => ({
+        entries: Thought.entries[eid] || [],
+        lastEntryId: Thought.lastEntryId[eid] || 0,
+        lastUpdate: Thought.lastUpdate[eid] || Date.now(),
+      })),
+      observe(this.world, onRemove(Thought), (eid) => {
+        delete Thought.entries[eid];
+        delete Thought.lastEntryId[eid];
+        delete Thought.lastUpdate[eid];
+      })
     );
   }
 

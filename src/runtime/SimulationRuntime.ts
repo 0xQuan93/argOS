@@ -15,15 +15,15 @@ import { EventManager } from "./managers/EventManager";
 import { IActionManager } from "./managers/IActionManager";
 import { ActionManager } from "./managers/ActionManager";
 import { RoomSystem } from "../systems/RoomSystem";
-import { ThinkingSystem } from "../systems/ThinkingSystem";
+import { ThinkingSystem2 } from "../systems/ThinkingSystem2";
 import { ActionSystem } from "../systems/ActionSystem";
 import { CleanupSystem } from "../systems/CleanupSystem";
-import { PerceptionSystem } from "../systems/PerceptionSystem";
-import { ExperienceSystem } from "../systems/ExperienceSystem";
+import { PerceptionSystem2 } from "../systems/PerceptionSystem2";
 import { PromptManager } from "./managers/promptManager";
-import { perceptionPrompt } from "../prompts/perception";
 import { GoalPlanningSystem } from "../systems/GoalPlanningSystem";
 import { PlanningSystem } from "../systems/PlanningSystem";
+import { createReportingSystem } from "../systems/reporting";
+import { createDiscordReportSystem } from '../systems/discordReportSystem';
 
 // Validate required environment variables
 if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
@@ -59,11 +59,12 @@ export interface RuntimeConfig {
 // Define default system configurations
 const defaultConsciousSystems = [
   RoomSystem.create,
-  PerceptionSystem.create,
-  ExperienceSystem.create,
-  ThinkingSystem.create,
+  PerceptionSystem2.create,
+  ThinkingSystem2.create,
   ActionSystem.create,
   CleanupSystem.create,
+  createReportingSystem,
+  createDiscordReportSystem,
 ];
 
 const defaultSubconsciousSystems = [
@@ -141,6 +142,9 @@ export class SimulationRuntime extends EventEmitter {
     beforeSystems: [],
   };
 
+  // Add loop promises to track running loops
+  private loopPromises: Map<ConsciousnessLevel, Promise<void>> = new Map();
+
   constructor(world: World, config: Partial<RuntimeConfig> = {}) {
     super();
     this.world = world;
@@ -164,7 +168,7 @@ export class SimulationRuntime extends EventEmitter {
     );
 
     // Initialize managers and other components
-    this.eventBus = new EventBus(this.world);
+    this.eventBus = new EventBus(this.world, this);
     this.componentSync = new ComponentSync(this.world);
     this.stateManager = new StateManager(this.world, this);
     this.roomManager = new RoomManager(this.world, this);
@@ -172,7 +176,7 @@ export class SimulationRuntime extends EventEmitter {
     this.actionManager = new ActionManager(this.world, this, this.eventBus);
     this.promptManager = new PromptManager(
       {
-        templates: [perceptionPrompt],
+        templates: [],
         defaultState: {},
       },
       this
@@ -225,17 +229,28 @@ export class SimulationRuntime extends EventEmitter {
   start() {
     if (this._isRunning) return;
     this._isRunning = true;
+
+    // Start each loop independently and store their promises
     for (const loop of this.systemLoops.values()) {
       loop.isRunning = true;
-      this.runLoop(loop); // Start each loop independently
+      const loopPromise = this.runLoop(loop).catch((error) => {
+        logger.error(`Error in ${loop.level} loop:`, error);
+        loop.isRunning = false;
+      });
+      this.loopPromises.set(loop.level, loopPromise);
     }
   }
 
-  stop() {
+  async stop() {
     this._isRunning = false;
     for (const loop of this.systemLoops.values()) {
       loop.isRunning = false;
     }
+
+    // Wait for all loops to complete
+    await Promise.all(this.loopPromises.values());
+    this.loopPromises.clear();
+
     this.emit("stateChanged", { isRunning: false });
   }
 
@@ -335,11 +350,20 @@ export class SimulationRuntime extends EventEmitter {
       const startTime = Date.now();
 
       try {
+        // Execute lifecycle hooks before systems
+        await this.executeLifecycleHooks("beforeSystems");
+
         // Run systems for this consciousness level
         logger.debug(`Running ${loop.level} systems`);
         for (const system of loop.systems) {
           if (!this._isRunning || !loop.isRunning) break;
-          this.world = await system(this.world);
+
+          try {
+            this.world = await system(this.world);
+          } catch (error) {
+            logger.error(`Error in ${loop.level} system:`, error);
+            // Continue with other systems even if one fails
+          }
         }
 
         // Calculate time spent and adjust delay
@@ -363,23 +387,35 @@ export class SimulationRuntime extends EventEmitter {
         logger.error(`Runtime error in ${loop.level} loop:`, error);
         // Don't stop other loops if one fails
         loop.isRunning = false;
+        throw error; // Re-throw to be caught by the promise handler in start()
       }
     }
   }
 
   // Add methods to control individual consciousness levels
-  startLevel(level: ConsciousnessLevel) {
+  async startLevel(level: ConsciousnessLevel) {
     const loop = this.systemLoops.get(level);
-    if (loop) {
+    if (loop && !loop.isRunning) {
       loop.isRunning = true;
+      const loopPromise = this.runLoop(loop).catch((error) => {
+        logger.error(`Error in ${level} loop:`, error);
+        loop.isRunning = false;
+      });
+      this.loopPromises.set(level, loopPromise);
       logger.system(`Started ${level} systems`);
     }
   }
 
-  stopLevel(level: ConsciousnessLevel) {
+  async stopLevel(level: ConsciousnessLevel) {
     const loop = this.systemLoops.get(level);
     if (loop) {
       loop.isRunning = false;
+      // Wait for the loop to complete
+      const promise = this.loopPromises.get(level);
+      if (promise) {
+        await promise;
+        this.loopPromises.delete(level);
+      }
       logger.system(`Stopped ${level} systems`);
     }
   }

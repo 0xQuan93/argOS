@@ -3,6 +3,8 @@ import {
   geminiFlashModel,
   gemini2FlashModel,
   geminiProModel,
+  haikuModel,
+  // claude35SonnetModel,
 } from "../config/ai-config";
 import { EXTRACT_EXPERIENCES, PROCESS_STIMULUS } from "../templates";
 import { GENERATE_PLAN } from "../templates/generate-plan";
@@ -11,7 +13,6 @@ import { llmLogger } from "../utils/llm-logger";
 import { logger } from "../utils/logger";
 import { parseJSON } from "../utils/json";
 import { GENERATE_THOUGHT_SIMPLE } from "../templates/generate-thought";
-import { ActionResult } from "../types/actions";
 import { World, addComponent, query, hasComponent } from "bitecs";
 import {
   Agent,
@@ -22,6 +23,7 @@ import {
   WorkingMemory,
   ProcessingState,
   ProcessingMode,
+  ActionResultType,
 } from "../components";
 import { SimulationRuntime } from "../runtime/SimulationRuntime";
 import { GENERATE_GOALS } from "../templates/generate-goals";
@@ -31,12 +33,18 @@ import {
 } from "../templates/evaluate-goal-progress";
 import { DETECT_SIGNIFICANT_CHANGES } from "../templates/detect-significant-changes";
 import { StimulusData } from "../types/stimulus";
+import { AgentState } from "../types";
+import { EVALUATE_TASK_PROGRESS } from "../templates/evaluate-task-progress";
+import { EVALUATE_PLAN_MODIFICATIONS } from "../templates/evaluate-plan-modifications";
+import { EXTRACT_EXPERIENCES_SIMPLE } from "../templates/extract-experiences";
+import PROCESS_PERCEPTIONS from "../templates/process-perceptions";
 
 export interface ThoughtResponse {
   thought: string;
   action?: {
     tool: string;
     parameters: Record<string, any>;
+    reasoning: string;
   };
   appearance?: {
     description?: string;
@@ -45,74 +53,6 @@ export interface ThoughtResponse {
     currentAction?: string;
     socialCues?: string;
   };
-}
-
-export interface AgentState {
-  systemPrompt: string;
-  name: string;
-  role: string;
-  thoughtHistory: string[];
-  perceptions: {
-    narrative: string;
-    raw: StimulusData[];
-  };
-  lastAction: ActionResult | undefined;
-  timeSinceLastAction: number | undefined;
-  experiences: Array<{
-    type: string;
-    content: string;
-    timestamp: number;
-  }>;
-  availableTools: Array<{
-    name: string;
-    description: string;
-    parameters: string[];
-    schema: any;
-  }>;
-  goals?: Array<{
-    id: string;
-    description: string;
-    priority: number;
-    type: "long_term" | "short_term" | "immediate";
-    status: "active" | "completed" | "failed" | "suspended";
-    progress: number;
-    deadline?: number;
-    parentGoalId?: string;
-  }>;
-  activeGoals?: Array<{
-    id: string;
-    description: string;
-    priority: number;
-    type: "long_term" | "short_term" | "immediate";
-    status: "active";
-    progress: number;
-    deadline?: number;
-    parentGoalId?: string;
-  }>;
-  activePlans?: Array<{
-    id: string;
-    goalId: string;
-    steps: Array<{
-      id: string;
-      description: string;
-      status: "pending" | "in_progress" | "completed" | "failed";
-      requiredTools?: string[];
-      expectedOutcome: string;
-    }>;
-    currentStepId?: string;
-    status: "active";
-  }>;
-  currentPlanSteps?: Array<{
-    planId: string;
-    goalId: string;
-    step: {
-      id: string;
-      description: string;
-      status: "pending" | "in_progress" | "completed" | "failed";
-      requiredTools?: string[];
-      expectedOutcome: string;
-    };
-  }>;
 }
 
 /**
@@ -128,9 +68,12 @@ async function callLLM(
     const startTime = Date.now();
 
     const { text } = await generateText({
+      // model: haikuModel,
+      // model: claude35SonnetModel,
       model: gemini2FlashModel,
       // model: geminiProModel,
       // model: geminiFlashModel,
+      temperature: 0.7,
       prompt,
       system: systemPrompt,
     });
@@ -165,26 +108,15 @@ export function composeFromTemplate(
 export async function generateThought(
   state: AgentState
 ): Promise<ThoughtResponse> {
-  const agentId = state.name; // Using name as ID for now
+  const agentId = state.name;
 
   try {
-    // Format experiences chronologically with type indicators
-    const formattedExperiences = state.experiences
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .map((exp) => {
-        const time = new Date(exp.timestamp).toLocaleTimeString();
-        return `[${time}] <${exp.type.toUpperCase()}> ${exp.content}`;
-      })
-      .join("\n");
-
-    // Compose the prompt with formatted data
     const prompt = composeFromTemplate(GENERATE_THOUGHT_SIMPLE, {
       ...state,
       perceptions: {
         narrative: state.perceptions.narrative,
         raw: JSON.stringify(state.perceptions.raw, null, 2),
       },
-      experiences: formattedExperiences,
       tools: state.availableTools
         .map((t) => `${t.name}: ${t.description}`)
         .join("\n"),
@@ -257,7 +189,7 @@ export interface ProcessStimulusState {
   recentPerceptions: string;
   timeSinceLastPerception: number;
   currentTimestamp: number;
-  lastAction?: ActionResult;
+  lastAction?: ActionResultType;
   stimulus: StimulusData[];
   currentGoals: GoalType[];
   activePlans: SinglePlanType[];
@@ -279,7 +211,7 @@ export interface ProcessStimulusState {
   outputGuidelines?: string;
   modeSpecificAntiPatterns?: string;
   modeFocusReminder?: string;
-  perceptionHistory?: string;
+  perceptionHistory?: string[];
 }
 
 export async function processStimulus(
@@ -308,6 +240,8 @@ export interface Experience {
   content: string;
   timestamp: number;
   category?: string;
+  queries?: string[];
+  data?: Record<string, any>;
 }
 
 export interface ExtractExperiencesState {
@@ -369,9 +303,12 @@ export async function extractExperiences(
       recentExperiencesCount: state.recentExperiences.length,
     });
 
-    const prompt = composeFromTemplate(EXTRACT_EXPERIENCES, {
+    // trim down the number of experiences to 20
+    const recentExperiences = state.recentExperiences.slice(0, 20);
+
+    const prompt = composeFromTemplate(EXTRACT_EXPERIENCES_SIMPLE, {
       ...state,
-      recentExperiences: JSON.stringify(state.recentExperiences, null, 2),
+      recentExperiences: JSON.stringify(recentExperiences, null, 2),
       stimulus: JSON.stringify(state.stimulus, null, 2),
       perceptionSummary: state.perceptionSummary,
     });
@@ -597,5 +534,229 @@ export async function generatePlan(
   } catch (error) {
     logger.error(`Failed to generate plan:`, error);
     throw error;
+  }
+}
+
+export interface EvaluateTaskState {
+  name: string;
+  systemPrompt: string;
+  agentId: string;
+  taskDescription: string;
+  expectedOutcome: string;
+  recentExperiences: any[];
+  recentPerception: any[];
+}
+
+export interface TaskEvaluation {
+  complete: boolean;
+  failed: boolean;
+  reason?: string;
+}
+
+export async function evaluateTaskProgress(
+  state: EvaluateTaskState
+): Promise<TaskEvaluation> {
+  let text = "";
+  try {
+    logger.debug("Evaluating task progress:", {
+      agentName: state.name,
+      taskDescription: state.taskDescription,
+    });
+
+    const prompt = composeFromTemplate(EVALUATE_TASK_PROGRESS, {
+      ...state,
+      recentExperiences: JSON.stringify(state.recentExperiences, null, 2),
+    });
+
+    text = await callLLM(prompt, state.systemPrompt, state.agentId);
+
+    // Log the raw response for debugging
+    logger.debug("Raw LLM response for task evaluation:", {
+      agentName: state.name,
+      taskDescription: state.taskDescription,
+      response: text,
+    });
+
+    const parsed = parseJSON<{ evaluation: TaskEvaluation }>(text);
+
+    logger.debug("Task evaluation:", {
+      complete: parsed.evaluation.complete,
+      failed: parsed.evaluation.failed,
+      reason: parsed.evaluation.reason,
+    });
+
+    return parsed.evaluation;
+  } catch (error) {
+    logger.error(`Failed to evaluate task progress:`, {
+      error,
+      agentName: state.name,
+      taskDescription: state.taskDescription,
+      rawResponse: text, // Now text is accessible in catch block
+    });
+    return {
+      complete: false,
+      failed: false,
+      reason: "Error evaluating task progress",
+    };
+  }
+}
+
+export interface EvaluatePlanModificationsState {
+  name: string;
+  systemPrompt: string;
+  agentId: string;
+  currentPlan: SinglePlanType;
+  recentExperiences: any[];
+  recentPerception: any[];
+}
+
+export interface PlanModificationResult {
+  shouldModify: boolean;
+  newTasks?: Array<{
+    description: string;
+    reason: string;
+    insertAfter?: string; // task description to insert after, if undefined add to end
+  }>;
+  tasksToRemove?: Array<{
+    description: string;
+    reason: string;
+  }>;
+  tasksToReorder?: Array<{
+    description: string;
+    moveAfter: string;
+    reason: string;
+  }>;
+}
+
+export async function evaluatePlanModifications({
+  name,
+  systemPrompt,
+  agentId,
+  currentPlan,
+  recentExperiences,
+  recentPerception,
+}: {
+  name: string;
+  systemPrompt: string;
+  agentId: string;
+  currentPlan: any;
+  recentExperiences: any[];
+  recentPerception: any[];
+}) {
+  const prompt = EVALUATE_PLAN_MODIFICATIONS.replace("${name}", name)
+    .replace("${currentPlan}", JSON.stringify(currentPlan, null, 2))
+    .replace("${recentExperiences}", JSON.stringify(recentExperiences, null, 2))
+    .replace("${recentPerception}", JSON.stringify(recentPerception, null, 2));
+
+  try {
+    const response = await callLLM(prompt, systemPrompt, agentId);
+    const result = parseJSON<{ modifications: PlanModificationResult }>(
+      response
+    );
+    return result.modifications;
+  } catch (error) {
+    logger.error("Failed to evaluate plan modifications", {
+      error,
+      agentId,
+    });
+    return {
+      shouldModify: false,
+      newTasks: [],
+      tasksToRemove: [],
+      tasksToReorder: [],
+    };
+  }
+}
+
+export interface ProcessPerceptionsState {
+  name: string;
+  role: string;
+  systemPrompt: string;
+  currentStimuli: Array<{
+    type: string;
+    content: string;
+    source: string;
+    metadata?: Record<string, any>;
+  }>;
+  recentThoughtChain: Array<{
+    type: "perception" | "thought" | "action" | "result";
+    content: string;
+    timestamp: number;
+  }>;
+  context: {
+    roomId: string;
+    roomName?: string;
+    roomDescription?: string;
+    currentGoals: Array<{
+      id: string;
+      description: string;
+      type: string;
+      priority: number;
+      progress?: number;
+    }>;
+    activePlans: Array<{
+      id: string;
+      goalId: string;
+      steps: Array<{
+        id: string;
+        description: string;
+        status: "pending" | "active" | "completed" | "failed";
+      }>;
+      status: "active" | "completed" | "failed";
+    }>;
+  };
+}
+
+export async function processPerceptions(
+  state: ProcessPerceptionsState
+): Promise<{
+  summary: string;
+  significance: "none" | "low" | "medium" | "high";
+  relatedThoughts: number[]; // IDs of related thought entries
+  analysis: {
+    keyObservations: string[];
+    potentialImplications: string[];
+    suggestedFocus?: string;
+  };
+}> {
+  const agentId = state.name;
+
+  try {
+    const prompt = composeFromTemplate(PROCESS_PERCEPTIONS, {
+      ...state,
+      currentStimuli: JSON.stringify(state.currentStimuli, null, 2),
+      recentThoughtChain: JSON.stringify(state.recentThoughtChain, null, 2),
+    });
+
+    const text = await callLLM(prompt, state.systemPrompt, agentId);
+    const parsed = parseJSON<{
+      summary: string;
+      significance: "none" | "low" | "medium" | "high";
+      relatedThoughts: number[];
+      analysis: {
+        keyObservations: string[];
+        potentialImplications: string[];
+        suggestedFocus?: string;
+      };
+    }>(text);
+
+    logger.debug("Processed perceptions:", {
+      agentName: state.name,
+      significance: parsed.significance,
+      observationCount: parsed.analysis.keyObservations.length,
+    });
+
+    return parsed;
+  } catch (error) {
+    logger.error(`Failed to process perceptions:`, error);
+    return {
+      summary: "I am having trouble processing my surroundings.",
+      significance: "none",
+      relatedThoughts: [],
+      analysis: {
+        keyObservations: [],
+        potentialImplications: [],
+      },
+    };
   }
 }

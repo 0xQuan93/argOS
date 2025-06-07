@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { ComponentWithSchema } from "../components/createComponent";
 import { RelationWithSchema } from "../components/createRelation";
-import { ActionResult } from "./actions";
 import { StimulusData, StimulusSource, StimulusType } from "./stimulus";
 import { SinglePlanType } from "../components/Plans";
+import { ActionResultType, ActionType, SingleGoalType } from "../components";
+import { GoalType } from "../components/Goals";
 
 // Agent summary type for global state
 export interface AgentSummary {
-  id: number;
+  id: string;
   name: string;
   role: string;
 }
@@ -18,7 +19,7 @@ export interface EntityComponentState {
   memory: any;
   rooms: any[];
   action: any & {
-    lastActionResult?: ActionResult;
+    lastActionResult?: ActionResultType;
   };
   perception: any;
   appearance: any;
@@ -85,73 +86,43 @@ export interface AgentState {
   name: string;
   role: string;
   systemPrompt: string;
-  active: number;
+  active: boolean;
   platform: string;
-  appearance: {
-    description: string;
-    facialExpression: string;
-    bodyLanguage: string;
-    currentAction: string;
-    socialCues: string[];
-  };
   attention: number;
-  roomId?: string | null;
-  facialExpression?: string;
-  bodyLanguage?: string;
-  currentAction?: string;
-  socialCues?: string[];
-  lastUpdate?: number;
-  thoughtHistory: string[];
   perceptions: {
     narrative: string;
-    raw: StimulusData[];
+    raw: any[];
   };
-  lastAction: ActionResult;
+  lastAction?: ActionResultType;
   timeSinceLastAction: number;
-  experiences: Array<{
-    type: string;
+  thoughtChain: Array<{
+    type: "perception" | "thought" | "action" | "result";
     content: string;
     timestamp: number;
   }>;
   availableTools: Array<{
     name: string;
     description: string;
-    parameters: string[];
-    schema: any;
+    schema?: any;
   }>;
-  goals?: Array<{
+  goals: Array<{
     id: string;
     description: string;
+    type: string;
     priority: number;
-    type: "long_term" | "short_term" | "immediate";
-    status: "active" | "completed" | "failed" | "suspended";
     progress: number;
+    status: "pending" | "in_progress" | "completed" | "failed";
     success_criteria: string[];
     progress_indicators: string[];
     created_at: number;
   }>;
-  completedGoals?: Array<{
-    id: string;
-    description: string;
-    priority: number;
-    type: "long_term" | "short_term" | "immediate";
-    status: "active" | "completed" | "failed" | "suspended";
-    progress: number;
-    success_criteria: string[];
-    progress_indicators: string[];
-    created_at: number;
-  }>;
-  activePlans?: Array<{
-    id: string;
-    goalId: string;
-    steps: Array<{
-      id: string;
-      description: string;
-      status: "pending" | "in_progress" | "completed" | "failed";
-      requiredTools?: string[];
-      expectedOutcome: string;
-    }>;
-    currentStepId?: string;
-    status: "active";
-  }>;
+  completedGoals: GoalType[];
+  activePlans: SinglePlanType[];
+  appearance: {
+    description?: string;
+    facialExpression?: string;
+    bodyLanguage?: string;
+    currentAction?: string;
+    socialCues?: string;
+  };
 }

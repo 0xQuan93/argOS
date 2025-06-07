@@ -25,7 +25,8 @@ export type EventType =
   | "thought"
   | "perception"
   | "action"
-  | "experience";
+  | "experience"
+  | "appearance";
 
 const EVENT_TYPES: Record<EventType, { label: string; color: string }> = {
   speech: { label: "Speech", color: "text-green-400" },
@@ -33,6 +34,7 @@ const EVENT_TYPES: Record<EventType, { label: string; color: string }> = {
   thought: { label: "Thoughts", color: "text-purple-400" },
   perception: { label: "Perceptions", color: "text-gray-400" },
   experience: { label: "Experiences", color: "text-emerald-400" },
+  appearance: { label: "Appearance", color: "text-blue-400" },
 };
 
 export function ChatInterface({
@@ -106,42 +108,125 @@ export function ChatInterface({
           if ("action" in content && content.action !== "speak") {
             const actionContent = content as ActionContent;
             const actionStr = actionContent.action;
-            const reasonStr = actionContent.result
-              ? ` (${actionContent.result})`
+            const reasonStr = actionContent.reason
+              ? `: ${actionContent.reason}`
               : "";
-            const paramsStr = actionContent.parameters
-              ? `: ${JSON.stringify(actionContent.parameters)}`
-              : "";
-            return `${actionStr}${reasonStr}${paramsStr}`;
+            return `${actionStr}${reasonStr}`;
           }
+
+          // Handle speech messages
           if ("message" in content) {
             return content.message;
           }
-          if ("content" in content) {
-            return typeof content.content === "object"
-              ? JSON.stringify(content.content)
-              : content.content;
+
+          // Handle perception data
+          if ("summary" in content) {
+            const perceptionData = content as {
+              summary: string;
+              significance: string;
+              analysis?: {
+                keyObservations?: string[];
+              };
+            };
+
+            // Just return the summary for perceptions
+            return perceptionData.summary;
           }
-          // For perception events, extract just the narrative
+
+          // Handle direct string content (like thoughts, observations)
+          if ("content" in content && typeof content.content === "string") {
+            return content.content;
+          }
+
+          // Handle narrative content
           if ("narrative" in content && typeof content.narrative === "string") {
             return content.narrative;
           }
-          // Fallback for other object types
-          return JSON.stringify(content);
+
+          // Fallback for other object types - try to extract meaningful content
+          if ("thought" in content) return content.thought;
+          if ("result" in content) return content.result;
+
+          // Last resort - stringify but with better formatting
+          try {
+            const cleanContent = { ...content };
+            // Remove noisy fields
+            delete cleanContent.timestamp;
+            delete cleanContent.thoughtEntryId;
+            delete cleanContent.agentName;
+            delete cleanContent.context;
+            return JSON.stringify(cleanContent, null, 2);
+          } catch (e) {
+            return String(content);
+          }
         }
-        // Direct string content (like thoughts, observations)
+
+        // Direct string content
         return String(content);
       }
       // Handle AGENT_UPDATE content
       const content = log.data.content;
+
+      // Handle appearance updates
+      if (log.data.category === "appearance" && typeof content === "object") {
+        const appearance = content as any;
+        const changes: string[] = [];
+
+        if (appearance.currentAction)
+          changes.push(`${appearance.currentAction}`);
+        if (appearance.facialExpression)
+          changes.push(`expression: ${appearance.facialExpression}`);
+        if (appearance.bodyLanguage)
+          changes.push(`body language: ${appearance.bodyLanguage}`);
+        if (appearance.socialCues)
+          changes.push(`social cues: ${appearance.socialCues}`);
+
+        return changes.join(" | ");
+      }
+
+      // Handle perception data - just show summary
       if (
         typeof content === "object" &&
         content !== null &&
-        "narrative" in content &&
-        typeof content.narrative === "string"
+        "summary" in content
       ) {
-        return content.narrative;
+        const perceptionData = content as {
+          summary: string;
+          significance: string;
+          analysis?: {
+            keyObservations?: string[];
+          };
+        };
+
+        // Format the perception data
+        let formattedPerception = perceptionData.summary;
+
+        // Add key observations if they exist
+        if (perceptionData.analysis?.keyObservations?.length) {
+          formattedPerception += "\nKey Observations:";
+          perceptionData.analysis.keyObservations.forEach((obs) => {
+            formattedPerception += `\n• ${obs}`;
+          });
+        }
+
+        return formattedPerception;
       }
+
+      // Handle other content types
+      if (typeof content === "string") {
+        return content;
+      }
+
+      try {
+        const parsed =
+          typeof content === "string" ? JSON.parse(content) : content;
+        if (parsed && typeof parsed === "object" && "summary" in parsed) {
+          return String(parsed.summary);
+        }
+      } catch (e) {
+        // If JSON parsing fails, fall back to string conversion
+      }
+
       return typeof content === "object"
         ? JSON.stringify(content)
         : String(content);

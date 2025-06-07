@@ -1,5 +1,15 @@
 import { World, query } from "bitecs";
-import { Room, OccupiesRoom, Agent, Appearance } from "../components";
+import {
+  Room,
+  OccupiesRoom,
+  Agent,
+  Appearance,
+  Action,
+  Memory,
+  Goal,
+  Perception,
+  Thought,
+} from "../components";
 import {
   RoomEvent,
   AgentEvent,
@@ -9,6 +19,7 @@ import {
   AgentState,
 } from "../types";
 import { SimulationLogger } from "../utils/simulation-logger";
+import { SimulationRuntime } from "./SimulationRuntime";
 
 export class EventBus {
   private world: World;
@@ -19,7 +30,7 @@ export class EventBus {
   private roomOccupants = new Map<number, Set<number>>();
   // private simulationLogger: SimulationLogger;
 
-  constructor(world: World) {
+  constructor(world: World, private runtime: SimulationRuntime) {
     this.world = world;
     // this.simulationLogger = new SimulationLogger();
   }
@@ -59,47 +70,10 @@ export class EventBus {
   // Build agent state object
   private buildAgentState(eid: number): AgentState {
     const roomId = this.getAgentRoom(eid);
+    const stateManager = this.runtime.getStateManager();
+    const agentState = stateManager.getAgentState(eid);
 
-    return {
-      id: String(eid),
-      name: Agent.name[eid],
-      role: Agent.role[eid],
-      systemPrompt: Agent.systemPrompt[eid],
-      active: Agent.active[eid],
-      platform: Agent.platform[eid],
-      appearance: {
-        description: Appearance.description[eid],
-        facialExpression: Appearance.facialExpression[eid],
-        bodyLanguage: Appearance.bodyLanguage[eid],
-        currentAction: Appearance.currentAction[eid],
-        socialCues: Appearance.socialCues[eid],
-      },
-      attention: Agent.attention[eid],
-      roomId: roomId ? Room.id[roomId] || String(roomId) : null,
-      facialExpression: Appearance.facialExpression[eid],
-      bodyLanguage: Appearance.bodyLanguage[eid],
-      currentAction: Appearance.currentAction[eid],
-      socialCues: Appearance.socialCues[eid],
-      lastUpdate: Date.now(),
-      thoughtHistory: [],
-      perceptions: {
-        narrative: "",
-        raw: [],
-      },
-      lastAction: {
-        success: false,
-        message: "No action taken yet",
-        timestamp: Date.now(),
-        actionName: "none",
-        parameters: {},
-        data: {},
-      },
-      timeSinceLastAction: 0,
-      experiences: [],
-      availableTools: [],
-      goals: [],
-      completedGoals: [],
-    };
+    return agentState;
   }
 
   // Emit event to a room channel
