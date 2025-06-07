@@ -61,3 +61,10 @@ Internal stimuli are how agents perceive their internal state (emotions, thought
 - [ ] Set up a new Discord channel connected to Hyperfy (pull info from project89.directory.hyperfy)
 - [ ] Establish designated repo for agent documentation
 - [ ] Plan future voice integration using Eleven Labs for voice channel access via the ArgOS Discord bot
+
+## LSE CLI
+- [x] generate-world command
+- [x] query-world command
+- [x] describe-entity command
+- [x] list-entities command
+- [x] add-task command

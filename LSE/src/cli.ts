@@ -6,9 +6,24 @@ import {
   switchMode,
   processInput,
   getWorldSummary,
+  addTask,
   GodState,
 } from "./god";
 import { generateWorld } from "./worldGenerator";
+import {
+  getWorldState,
+  describeEntity,
+  getEntityNames,
+} from "./world";
+
+let godState: GodState | null = null;
+
+function ensureGod(): GodState {
+  if (!godState) {
+    godState = createGod();
+  }
+  return godState;
+}
 
 export function runCLI() {
   const program = new Command();
@@ -19,10 +34,52 @@ export function runCLI() {
     .version("0.1.0");
 
   program
-    .command("start", { isDefault: true })
-    .description("Start the World Simulation CLI")
+    .command("start")
+    .description("Start an interactive session")
     .action(() => {
       startSimulation();
+    });
+
+  program
+    .command("generate-world <prompt...>")
+    .description("Generate a new world with the given prompt")
+    .action(async (promptParts: string[]) => {
+      const prompt = promptParts.join(" ");
+      const god = ensureGod();
+      await generateWorldAsync(god, prompt);
+    });
+
+  program
+    .command("query-world")
+    .description("Output a summary of the current world state")
+    .action(() => {
+      const god = ensureGod();
+      console.log(getWorldState(god.world));
+    });
+
+  program
+    .command("describe-entity <name>")
+    .description("Describe a specific entity")
+    .action((name: string) => {
+      const god = ensureGod();
+      console.log(describeEntity(god.world, god.entityMap, name));
+    });
+
+  program
+    .command("list-entities")
+    .description("List all entities in the world")
+    .action(() => {
+      const god = ensureGod();
+      getEntityNames(god.entityMap).forEach((n) => console.log(n));
+    });
+
+  program
+    .command("add-task <task...>")
+    .description("Add a task for the God AI to process")
+    .action((parts: string[]) => {
+      const god = ensureGod();
+      addTask(god, parts.join(" "));
+      console.log("Task added");
     });
 
   program.parse(process.argv);
@@ -32,7 +89,7 @@ async function startSimulation() {
   console.log(chalk.blue("Welcome to the World Simulation CLI!"));
   console.log(chalk.blue("Let's start by creating a world"));
 
-  const godState = createGod();
+  godState = createGod();
   console.log("GodState created:", godState); // Debug log
 
   if (!godState || typeof godState !== "object") {
