@@ -31,6 +31,10 @@ export class LongTermQualityMonitor {
   }
 
   private scheduleQualityCheck(agentId: number) {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+
     setInterval(async () => {
       const test = this.qualityTests.get(agentId);
       if (!test) return;
