@@ -65,6 +65,10 @@ ArgOS is evolving towards becoming a complete framework for artificial conscious
 
 ## Getting Started
 
+**Requirements**
+
+- Node.js **20.x** is recommended to match the development dependencies.
+
 1. Install dependencies:
 
 ```bash
@@ -85,6 +89,18 @@ Some features may require the project to be built before running. Use the follow
 npm run build
 ```
 
+3. Start the full development environment (server and UI):
+
+```bash
+npm run dev
+```
+
+4. Run the test suite:
+
+```bash
+npm run test
+```
+
 ## Cloning the Repository
 
 ```bash
@@ -99,18 +115,20 @@ cd argOS
 
 ## Configuring the Environment
 
-Environment Variables:
-
-1. Check if the repository includes a .env.example file. If so, rename it to .env:
+1. Copy the example environment file and rename it:
 
 ```bash
 cp .env.example .env
 ```
 
-2. Populate the .env file with the required values. For example:
+2. Edit `.env` and provide values for **all** variables:
 
 ```bash
 GOOGLE_GENERATIVE_AI_API_KEY=your-api-key-here
+DISCORD_BOT_TOKEN=your-discord-bot-token
+DISCORD_MONITOR_CHANNEL_ID=channel-id-to-monitor
+DISCORD_ANNOUNCEMENT_CHANNEL_ID=channel-id-for-announcements
+DEBUG=true
 ```
 
 ## Architecture
@@ -183,7 +201,9 @@ The project includes several example scenarios:
 ## Discord Monitoring Flow
 
 ArgOS can connect to a Discord channel and generate automated summaries.
-See `docs/DISCORD_REPORT_FLOW.md` for a step-by-step outline.
+To enable this feature, configure a Discord bot and provide `DISCORD_BOT_TOKEN`,
+`DISCORD_MONITOR_CHANNEL_ID` and `DISCORD_ANNOUNCEMENT_CHANNEL_ID` in your `.env`
+file. See `docs/DISCORD_REPORT_FLOW.md` for a step-by-step outline.
 
 ## Contributing
 
