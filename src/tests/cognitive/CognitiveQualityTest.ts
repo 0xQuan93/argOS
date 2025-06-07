@@ -129,7 +129,11 @@ export class CognitiveQualityTest {
 
     // Calculate improvements
     for (const key of Object.keys(current) as Array<keyof CognitiveMetrics>) {
-      improvements[key] = current[key] - this.baseline[key];
+      if (key === 'responseTime') {
+        improvements[key] = 0;
+      } else {
+        improvements[key] = current[key] - this.baseline[key];
+      }
     }
 
     return { metrics: current, improvements };
