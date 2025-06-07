@@ -1,4 +1,4 @@
-import { CognitiveQualityTest } from "./CognitiveQualityTest";
+import { CognitiveQualityTest, CognitiveMetrics } from "./CognitiveQualityTest";
 import { SimulationRuntime } from "../../runtime/SimulationRuntime";
 
 export class LongTermQualityMonitor {

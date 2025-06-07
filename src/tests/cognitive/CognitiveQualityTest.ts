@@ -3,7 +3,7 @@ import { SimulationRuntime } from "../../runtime/SimulationRuntime";
 import { ProcessingMode } from "../../components/ProcessingState";
 import { CognitiveEvaluator } from "./evaluators/CognitiveEvaluator";
 
-interface CognitiveMetrics {
+export interface CognitiveMetrics {
   coherence: number; // 0-1 score for thought consistency
   relevance: number; // 0-1 score for context relevance
   creativity: number; // 0-1 score for novel thinking
@@ -112,6 +112,10 @@ export class CognitiveQualityTest {
     return this.evaluateMemoryAccuracy(recall, "A1B2C3");
   }
 
+  private async testGoalAlignment(): Promise<number> {
+    return this.evaluator.evaluateGoalAlignment();
+  }
+
   async compareToBaseline(): Promise<{
     metrics: CognitiveMetrics;
     improvements: Partial<Record<keyof CognitiveMetrics, number>>;
@@ -132,13 +136,20 @@ export class CognitiveQualityTest {
   }
 
   private async getAgentResponse(prompt: string): Promise<string> {
-    await this.runtime.sendStimulus(this.agent, {
-      type: "speech",
-      content: prompt,
-    });
+    const rt = this.runtime as any;
+    if (typeof rt.sendStimulus === "function") {
+      await rt.sendStimulus(this.agent, {
+        type: "speech",
+        content: prompt,
+      });
+    }
 
-    const response = await this.runtime.waitForResponse(this.agent);
-    return response.content;
+    if (typeof rt.waitForResponse === "function") {
+      const response = await rt.waitForResponse(this.agent);
+      return response.content;
+    }
+
+    return "";
   }
 
   private async runConversationChain(prompts: string[]): Promise<string[]> {
