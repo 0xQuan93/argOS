@@ -180,6 +180,12 @@ The project includes several example scenarios:
 
 - `basic-conversation.ts`: Two agents engaging in basic interaction
 
+## Running the Server and Client
+
+- **Server only**: Use `npm run dev:server` to start just the WebSocket server. It listens on port `3000` by default as defined in `src/server/index.ts`.
+- **Build the client**: Run `npm run build` to compile the React client. The build output is generated in `dist/client`.
+- **Serve the build**: After building, you can serve the static files with any HTTP server (e.g. `npx vite preview` or `npx serve ./dist/client`).
+
 ## Discord Monitoring Flow
 
 ArgOS can connect to a Discord channel and generate automated summaries.
