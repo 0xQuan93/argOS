@@ -1,24 +1,22 @@
-import { defineSystem, System, query, removeEntity } from 'bitecs';
+import { query, removeEntity } from 'bitecs';
 import { World } from '../types';
-import { StimulusComponent } from '../components/Stimulus';
+import { Stimulus } from '../components/Stimulus';
 import { StimulusSource } from '../types/stimulus';
 import { sendDiscordMessage } from '../discord';
-
-const stimulusQuery = query([StimulusComponent.component]);
+import { createSystem } from './System';
 
 const announcementChannelId = process.env.DISCORD_ANNOUNCEMENT_CHANNEL_ID;
 
-export const createDiscordReportSystem = (): System => {
-  return defineSystem((world: World) => {
+export const createDiscordReportSystem = createSystem((runtime) => async (world: World) => {
     if (!announcementChannelId) {
       return world;
     }
 
-    const entities = stimulusQuery(world);
+    const entities = query(world, [Stimulus]);
     for (const eid of entities) {
-      if (StimulusComponent.component.source[eid] === StimulusSource.SYSTEM) {
+      if (Stimulus.source[eid] === StimulusSource.SYSTEM) {
         try {
-          const content = JSON.parse(StimulusComponent.component.content[eid]);
+          const content = JSON.parse(Stimulus.content[eid]);
           const summary = `Summary of activity: ${content.data}`;
           sendDiscordMessage(announcementChannelId, summary);
         } catch (e) {
@@ -30,5 +28,4 @@ export const createDiscordReportSystem = (): System => {
     }
 
     return world;
-  });
-}; 
+});

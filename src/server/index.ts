@@ -8,36 +8,29 @@ import {
   RoomUpdateMessage,
   RoomEvent,
 } from "../types";
-import { setupSingleAgent } from "../examples/single-agent-setup";
+import { setupProject89 } from "../examples/project89";
 import { Room } from "../components";
 import { removeEntity } from "bitecs";
 import { logger } from "../utils/logger";
-import { createUser, moveUserToRoom } from "../utils/agent-factory";
+import { createUser } from "../utils/agent-factory";
 import { findRoomByStringId } from "../utils/queries";
 import { createAuditoryStimulus } from "../factories/stimulusFactory";
-import { StimulusSource, StimulusType } from "../types/stimulus";
+import { StimulusSource } from "../types/stimulus";
 import { initializeDiscord } from "../discord";
-// import { setupBasicConversation } from "../examples/basic-conversation";
-// import { setupEmergentBeing } from "../examples/emergentGemini";
+import { saveBackroomState } from "../db";
 
 // Track user connections with Map
 const connectionUsers = new Map<
   WS,
   {
-    entity: number;
+    entity: number | null; // Null if passive viewer
     lastHeartbeat: number;
+    viewingRoomId?: string; // If passive viewer, which room are they watching
   }
 >();
 
 const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 const HEARTBEAT_TIMEOUT = 45000; // 45 seconds
-
-const getRuntime = () => {
-  let { runtime } = setupSingleAgent();
-  // let { runtime } = setupBasicConversation();
-  // let { runtime } = setupEmergentBeing();
-  return runtime;
-};
 
 // Helper to send message to a WebSocket client
 const sendMessage = (ws: WS, message: ServerMessage) => {
@@ -47,25 +40,21 @@ const sendMessage = (ws: WS, message: ServerMessage) => {
 };
 
 // Add cleanup helper function
-async function cleanupUserConnection(ws: WS, userConn: { entity: number }) {
-  logger.system(`Connection cleanup for user entity: ${userConn.entity}`);
-
-  // First remove from tracking maps to prevent new operations
-  activeUserEntities.delete(userConn.entity);
-  connectionUsers.delete(ws);
-
-  // Then cleanup event subscriptions
-  eventEmitter.removeClient(ws);
-
-  // Finally remove the entity and notify
-  try {
-    removeEntity(runtime.world, userConn.entity);
-    // Wait a tick to ensure entity removal is processed
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    runtime.getEventManager().emitWorldState();
-  } catch (error) {
-    logger.error(`Error cleaning up user entity:`, { error });
+async function cleanupUserConnection(ws: WS, userConn: { entity: number | null }) {
+  if (userConn.entity) {
+      logger.system(`Connection cleanup for user entity: ${userConn.entity}`);
+      activeUserEntities.delete(userConn.entity);
+      try {
+        removeEntity(runtime.world, userConn.entity);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        runtime.getEventManager().emitWorldState();
+      } catch (error) {
+        logger.error(`Error cleaning up user entity:`, { error });
+      }
   }
+  
+  connectionUsers.delete(ws);
+  eventEmitter.removeClient(ws);
 }
 
 // Clean up inactive users
@@ -75,7 +64,7 @@ async function cleanupInactiveUsers() {
 
   for (const [ws, userConn] of connectionUsers.entries()) {
     if (now - userConn.lastHeartbeat > HEARTBEAT_TIMEOUT) {
-      logger.system(`Cleaning up inactive user: ${userConn.entity}`);
+      // logger.system(`Cleaning up inactive connection`);
       cleanupPromises.push(
         cleanupUserConnection(ws, userConn).then(() => {
           ws.close();
@@ -90,13 +79,32 @@ async function cleanupInactiveUsers() {
 // Start heartbeat interval
 setInterval(cleanupInactiveUsers, HEARTBEAT_INTERVAL);
 
-// Set up initial runtime and event emitter
-// let { runtime } = setupSingleAgent();
-let runtime = getRuntime();
+let runtime: SimulationRuntime;
 const eventEmitter = new EventEmitter();
-
-// Track active user entities
 const activeUserEntities = new Set<number>();
+const wss = new WebSocketServer({ port: 3000 }); // Main WS server
+
+wss.on('listening', () => {
+  logger.system('WebSocket server is listening on port 3000');
+});
+
+// Initialize everything
+(async () => {
+    try {
+        const setup = await setupProject89();
+        runtime = setup.runtime;
+        
+        setupRuntimeEventHandlers(runtime);
+        initializeDiscord(runtime);
+        
+        runtime.start();
+        logger.system("Simulation started.");
+        
+    } catch (e) {
+        logger.error("Failed to start simulation", { error: e });
+        process.exit(1);
+    }
+})();
 
 // Set up runtime event handlers
 function setupRuntimeEventHandlers(runtime: SimulationRuntime) {
@@ -107,14 +115,15 @@ function setupRuntimeEventHandlers(runtime: SimulationRuntime) {
       const stringRoomId = Room.id[roomId] || String(roomId);
       const stringAgentId = String(agentId);
 
-      // Send agent updates only to direct agent subscribers
+      // Send agent updates only to direct agent subscribers OR passive viewers of the room
       wss.clients.forEach((client: WS) => {
         const subs = eventEmitter.getSubscriptions(client);
-        if (
-          subs?.has(`${stringRoomId}:${stringAgentId}`) &&
-          client.readyState === WS.OPEN
-        ) {
-          // Send as AGENT_UPDATE to direct agent subscribers
+        const userConn = connectionUsers.get(client);
+        
+        const isSubscribed = subs?.has(`${stringRoomId}:${stringAgentId}`);
+        const isViewingRoom = userConn?.viewingRoomId === stringRoomId;
+
+        if ((isSubscribed || isViewingRoom) && client.readyState === WS.OPEN) {
           const message: AgentUpdateMessage = {
             type: "AGENT_UPDATE",
             channel: {
@@ -131,11 +140,29 @@ function setupRuntimeEventHandlers(runtime: SimulationRuntime) {
   );
 
   eventManager.onRoomUpdate((roomId: string, data: RoomEvent) => {
+    // Persist State
+    // We need numerical ID for saveBackroomState. 
+    // Assuming roomId string format "backroom-X" or similar.
+    // Ideally we pass the numeric ID or look it up. 
+    // For now, if roomId is purely string, we might save by string if we update db.ts, 
+    // but db.ts expects number. 
+    // Let's try to extract number if possible, or just skip if not a backroom.
+    if (roomId.startsWith('backroom-')) {
+        const id = parseInt(roomId.split('-')[1]);
+        if (!isNaN(id)) {
+             saveBackroomState(id, roomId, data).catch(err => logger.error("Failed to save backroom state", { err }));
+        }
+    }
+
     // Send room events to room subscribers
     wss.clients.forEach((client: WS) => {
       const subs = eventEmitter.getSubscriptions(client);
-      if (subs?.has(roomId) && client.readyState === WS.OPEN) {
-        // Format as ROOM_UPDATE
+      const userConn = connectionUsers.get(client);
+      
+      const isSubscribed = subs?.has(roomId);
+      const isViewingRoom = userConn?.viewingRoomId === roomId;
+
+      if ((isSubscribed || isViewingRoom) && client.readyState === WS.OPEN) {
         const message: RoomUpdateMessage = {
           type: "ROOM_UPDATE",
           data: {
@@ -159,7 +186,6 @@ function setupRuntimeEventHandlers(runtime: SimulationRuntime) {
 
   // Add world update handler
   eventManager.onWorldUpdate((worldState) => {
-    // Send world update to all connected clients
     wss.clients.forEach((client: WS) => {
       if (client.readyState === WS.OPEN) {
         sendMessage(client, {
@@ -172,53 +198,30 @@ function setupRuntimeEventHandlers(runtime: SimulationRuntime) {
   });
 }
 
-// Set up initial event handlers
-setupRuntimeEventHandlers(runtime);
-
-// Initialize Discord client
-initializeDiscord(runtime);
-
-const wss = new WebSocketServer({ port: 3000 });
-
 wss.on("connection", (ws: WS) => {
-  // Check if this connection already has a user entity
   if (connectionUsers.has(ws)) {
-    logger.warn("Connection already has a user entity");
     ws.close();
     return;
   }
 
-  // Create user entity only if none exists for this connection
-  const userEntity = createUser(runtime.world);
-
-  // Double check entity wasn't created during async gap
-  if (activeUserEntities.has(userEntity)) {
-    logger.warn("User entity already exists");
-    removeEntity(runtime.world, userEntity);
-    ws.close();
-    return;
-  }
-
-  // Add to tracking in synchronized way
-  activeUserEntities.add(userEntity);
+  // Initial connection state - unauthenticated/unassigned
   connectionUsers.set(ws, {
-    entity: userEntity,
+    entity: null,
     lastHeartbeat: Date.now(),
   });
 
-  logger.system(
-    `New connection established, created user entity: ${userEntity}`
-  );
+  logger.system(`New connection established`);
 
-  // Send initial world state
-  const worldState = runtime.getStateManager().getWorldState();
-  sendMessage(ws, {
-    type: "WORLD_UPDATE",
-    data: worldState,
-    timestamp: Date.now(),
-  });
+  // Wait for runtime to be ready before sending world state
+  if (runtime) {
+      const worldState = runtime.getStateManager().getWorldState();
+      sendMessage(ws, {
+        type: "WORLD_UPDATE",
+        data: worldState,
+        timestamp: Date.now(),
+      });
+  }
 
-  // Set up ping-pong for connection health check
   ws.on("pong", () => {
     const userConn = connectionUsers.get(ws);
     if (userConn) {
@@ -226,7 +229,6 @@ wss.on("connection", (ws: WS) => {
     }
   });
 
-  // Update error and close handlers
   ws.on("error", async (error) => {
     logger.error(`WebSocket error:`, { error });
     const userConn = connectionUsers.get(ws);
@@ -248,26 +250,35 @@ wss.on("connection", (ws: WS) => {
     const message = JSON.parse(data.toString());
     const userConn = connectionUsers.get(ws);
 
-    if (!userConn) {
-      logger.error("No user entity found for connection", { ws });
-      return;
-    }
-
-    // Update heartbeat on any message
+    if (!userConn) return;
     userConn.lastHeartbeat = Date.now();
 
     switch (message.type) {
-      case "CONNECTION_UPDATE":
-        // Just acknowledge the connection, don't create new user
-        sendMessage(ws, {
-          type: "CONNECTION_UPDATE",
-          connected: true,
-          timestamp: Date.now(),
-        });
-        break;
+      case "JOIN_AS_USER": // Legacy support or explicit user join
+         if (!userConn.entity) {
+             const userEntity = createUser(runtime.world);
+             if (activeUserEntities.has(userEntity)) {
+                 removeEntity(runtime.world, userEntity);
+                 return;
+             }
+             activeUserEntities.add(userEntity);
+             userConn.entity = userEntity;
+             logger.system(`User joined as entity: ${userEntity}`);
+         }
+         break;
 
+      case "VIEW_BACKROOM": // Passive viewing
+         const { roomId } = message;
+         if (roomId) {
+             userConn.viewingRoomId = roomId;
+             logger.system(`Client viewing room: ${roomId}`);
+             // Send immediate room state if possible?
+             // Typically handled by periodic updates or initial fetch.
+         }
+         break;
+
+      case "CONNECTION_UPDATE":
       case "HEARTBEAT":
-        // Client explicitly sending heartbeat
         sendMessage(ws, {
           type: "CONNECTION_UPDATE",
           connected: true,
@@ -278,66 +289,36 @@ wss.on("connection", (ws: WS) => {
       case "SUBSCRIBE_ROOM": {
         const { roomId } = message;
         if (!roomId) break;
-
-        // First unsubscribe from current room if any
-        eventEmitter.unsubscribeFromCurrentRoom(ws);
-
-        // Find room entity
-        const roomEntity = findRoomByStringId(runtime.world, roomId);
-        if (!roomEntity) {
-          logger.error(`Room ${roomId} not found`, { roomId });
-          break;
+        
+        // If they have an entity, move it. If not, just subscribe?
+        // Existing logic assumes entity.
+        if (userConn.entity) {
+            eventEmitter.unsubscribeFromCurrentRoom(ws);
+            const roomEntity = findRoomByStringId(runtime.world, roomId);
+            if (!roomEntity) break;
+            
+            eventEmitter.subscribe(ws, { room: roomId });
+            runtime.getRoomManager().moveAgentToRoom(userConn.entity, roomEntity);
+            runtime.getEventManager().emitWorldState();
+        } else {
+            // Treat as passive view
+            userConn.viewingRoomId = roomId;
         }
-
-        eventEmitter.subscribe(ws, { room: roomId });
-
-        // Move user entity to the subscribed room using RoomManager
-        runtime.getRoomManager().moveAgentToRoom(userConn.entity, roomEntity);
-
-        // Emit updated world state after moving user
-        runtime.getEventManager().emitWorldState();
         break;
       }
 
       case "CHAT": {
+        if (!userConn.entity) {
+            // Viewers cannot chat
+            sendMessage(ws, { type: "ERROR", message: "Viewers cannot chat" } as any);
+            break;
+        }
         const chatData = message as ChatMessage;
         const { message: chatMessage, target: roomId } = chatData;
 
         if (roomId) {
           const roomEntity = findRoomByStringId(runtime.world, roomId);
-          if (!roomEntity) {
-            logger.error(`Room ${roomId} not found`, { roomId });
-            break;
-          }
-
-          const stimulusId = createAuditoryStimulus(
-            runtime.world,
-            userConn.entity,
-            chatMessage,
-            {
-              source: StimulusSource.USER,
-              metadata: {
-                roomId,
-                type: "speech",
-                tone: "neutral",
-              },
-              decay: 1,
-            }
-          );
-
-          if (stimulusId) {
-            runtime.getRoomManager().addStimulusToRoom(stimulusId, roomEntity);
-          }
-        } else {
-          // Broadcast to all rooms
-          const rooms = runtime.getStateManager().getWorldState().rooms;
-          rooms.forEach((room) => {
-            const roomEntity = findRoomByStringId(runtime.world, room.id);
-            if (!roomEntity) {
-              logger.error(`Room ${room.id} not found`, { roomId: room.id });
-              return;
-            }
-
+          if (roomEntity) {
             const stimulusId = createAuditoryStimulus(
               runtime.world,
               userConn.entity,
@@ -345,66 +326,23 @@ wss.on("connection", (ws: WS) => {
               {
                 source: StimulusSource.USER,
                 metadata: {
-                  roomId: room.id,
+                  roomId,
                   type: "speech",
                   tone: "neutral",
                 },
                 decay: 1,
               }
             );
-
             if (stimulusId) {
-              runtime
-                .getRoomManager()
-                .addStimulusToRoom(stimulusId, roomEntity);
+              runtime.getRoomManager().addStimulusToRoom(stimulusId, roomEntity);
             }
-          });
+          }
         }
         break;
       }
-
-      case "START":
-        runtime.start();
-        sendMessage(ws, {
-          type: "WORLD_UPDATE",
-          data: runtime.getStateManager().getWorldState(),
-          timestamp: Date.now(),
-        });
-        break;
-
-      case "STOP":
-        runtime.stop();
-        sendMessage(ws, {
-          type: "WORLD_UPDATE",
-          data: {
-            ...runtime.getStateManager().getWorldState(),
-            isRunning: false,
-          },
-          timestamp: Date.now(),
-        });
-        break;
-
-      case "RESET":
-        // Clean up old runtime
-        runtime.cleanup();
-        // Create fresh runtime
-        runtime = getRuntime();
-        // Set up event handlers for new runtime
-        setupRuntimeEventHandlers(runtime);
-        // Send fresh world state
-        sendMessage(ws, {
-          type: "WORLD_UPDATE",
-          data: {
-            ...runtime.getStateManager().getWorldState(),
-            isRunning: false,
-          },
-          timestamp: Date.now(),
-        });
-        break;
     }
   });
 
-  // Start sending pings to this client
   const pingInterval = setInterval(() => {
     if (ws.readyState === WS.OPEN) {
       ws.ping();
@@ -413,6 +351,5 @@ wss.on("connection", (ws: WS) => {
     }
   }, HEARTBEAT_INTERVAL);
 
-  // Clear ping interval on close
   ws.on("close", () => clearInterval(pingInterval));
 });

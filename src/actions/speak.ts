@@ -68,7 +68,7 @@ export async function execute(
   logger.agent(eid, `Says: ${message}`, agentName);
 
   // Create auditory stimulus
-  createAuditoryStimulus(world, eid, message, {
+  const stimulusId = createAuditoryStimulus(world, eid, message, {
     source: StimulusSource.AGENT,
     metadata: {
       roomId: Room.id[roomId],
@@ -79,6 +79,15 @@ export async function execute(
     },
     decay: 1,
   });
+
+  // Explicitly associate the stimulus with the room
+  if (stimulusId) {
+      const { addStimulusToRoom } = require("../components/relationships/stimulus");
+      addStimulusToRoom(world, stimulusId, roomId, 1.0, {
+          type: "speech",
+          agentId: eid
+      });
+  }
 
   // Emit action event to room
   eventBus.emitRoomEvent(

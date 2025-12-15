@@ -1,0 +1,635 @@
+DEBUG: ComponentSync constructor
+DEBUG: Agent: {
+  id: [],
+  name: [],
+  role: [],
+  systemPrompt: [],
+  active: [],
+  platform: [],
+  appearance: [],
+  attention: []
+}
+DEBUG: Room: { id: [], name: [], description: [], type: [] }
+[System] Registered component: Action
+
+[System] Registered component: Agent
+
+[System] Registered component: Appearance
+
+[System] Registered component: Goal
+
+[System] Registered component: Perception
+
+[System] Registered component: Plan
+
+[System] Registered component: RecentActions
+
+[System] Registered component: Room
+
+[System] Registered component: Stimulus
+
+[System] Registered component: Cleanup
+
+[System] Registered component: WorkingMemory
+
+[System] Registered component: ProcessingState
+
+[System] Registered component: Thought
+
+[System] Registered component: Report
+
+[System] Runtime initialized with:
+
+[System] conscious:
+
+[System] - 7 systems
+
+[System] - 10000ms interval
+
+[System] subconscious:
+
+[System] - 2 systems
+
+[System] - 25000ms interval
+
+[System] unconscious:
+
+[System] - 0 systems
+
+[System] - 50000ms interval
+
+[System] - 0 actions
+
+[System] - 14 components
+
+[System] Initializing Project 89 Simulation...
+
+[System] Created Backroom-1
+
+[System] Created Backroom-2
+
+[System] Created Backroom-3
+
+[System] Created Backroom-4
+
+[System] Created Backroom-5
+
+[System] Created agent: Project89-Agent-1 (Project 89 Agent) with active=1
+
+[System] Added agent 6 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-2 (Project 89 Agent) with active=1
+
+[System] Added agent 7 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-3 (Project 89 Agent) with active=1
+
+[System] Added agent 8 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-4 (Project 89 Agent) with active=1
+
+[System] Added agent 9 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-5 (Project 89 Agent) with active=1
+
+[System] Added agent 10 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-6 (Project 89 Agent) with active=1
+
+[System] Added agent 11 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-7 (Project 89 Agent) with active=1
+
+[System] Added agent 12 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-8 (Project 89 Agent) with active=1
+
+[System] Added agent 13 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-9 (Project 89 Agent) with active=1
+
+[System] Added agent 14 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-10 (Project 89 Agent) with active=1
+
+[System] Added agent 15 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-11 (Project 89 Agent) with active=1
+
+[System] Added agent 16 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-12 (Project 89 Agent) with active=1
+
+[System] Added agent 17 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-13 (Project 89 Agent) with active=1
+
+[System] Added agent 18 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-14 (Project 89 Agent) with active=1
+
+[System] Added agent 19 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-15 (Project 89 Agent) with active=1
+
+[System] Added agent 20 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-16 (Project 89 Agent) with active=1
+
+[System] Added agent 21 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-17 (Project 89 Agent) with active=1
+
+[System] Added agent 22 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-18 (Project 89 Agent) with active=1
+
+[System] Added agent 23 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-19 (Project 89 Agent) with active=1
+
+[System] Added agent 24 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-20 (Project 89 Agent) with active=1
+
+[System] Added agent 25 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-21 (Project 89 Agent) with active=1
+
+[System] Added agent 26 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-22 (Project 89 Agent) with active=1
+
+[System] Added agent 27 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-23 (Project 89 Agent) with active=1
+
+[System] Added agent 28 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-24 (Project 89 Agent) with active=1
+
+[System] Added agent 29 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-25 (Project 89 Agent) with active=1
+
+[System] Added agent 30 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-26 (Project 89 Agent) with active=1
+
+[System] Added agent 31 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-27 (Project 89 Agent) with active=1
+
+[System] Added agent 32 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-28 (Project 89 Agent) with active=1
+
+[System] Added agent 33 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-29 (Project 89 Agent) with active=1
+
+[System] Added agent 34 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-30 (Project 89 Agent) with active=1
+
+[System] Added agent 35 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-31 (Project 89 Agent) with active=1
+
+[System] Added agent 36 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-32 (Project 89 Agent) with active=1
+
+[System] Added agent 37 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-33 (Project 89 Agent) with active=1
+
+[System] Added agent 38 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-34 (Project 89 Agent) with active=1
+
+[System] Added agent 39 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-35 (Project 89 Agent) with active=1
+
+[System] Added agent 40 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-36 (Project 89 Agent) with active=1
+
+[System] Added agent 41 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-37 (Project 89 Agent) with active=1
+
+[System] Added agent 42 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-38 (Project 89 Agent) with active=1
+
+[System] Added agent 43 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-39 (Project 89 Agent) with active=1
+
+[System] Added agent 44 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-40 (Project 89 Agent) with active=1
+
+[System] Added agent 45 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-41 (Project 89 Agent) with active=1
+
+[System] Added agent 46 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-42 (Project 89 Agent) with active=1
+
+[System] Added agent 47 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-43 (Project 89 Agent) with active=1
+
+[System] Added agent 48 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-44 (Project 89 Agent) with active=1
+
+[System] Added agent 49 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-45 (Project 89 Agent) with active=1
+
+[System] Added agent 50 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-46 (Project 89 Agent) with active=1
+
+[System] Added agent 51 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-47 (Project 89 Agent) with active=1
+
+[System] Added agent 52 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-48 (Project 89 Agent) with active=1
+
+[System] Added agent 53 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-49 (Project 89 Agent) with active=1
+
+[System] Added agent 54 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-50 (Project 89 Agent) with active=1
+
+[System] Added agent 55 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-51 (Project 89 Agent) with active=1
+
+[System] Added agent 56 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-52 (Project 89 Agent) with active=1
+
+[System] Added agent 57 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-53 (Project 89 Agent) with active=1
+
+[System] Added agent 58 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-54 (Project 89 Agent) with active=1
+
+[System] Added agent 59 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-55 (Project 89 Agent) with active=1
+
+[System] Added agent 60 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-56 (Project 89 Agent) with active=1
+
+[System] Added agent 61 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-57 (Project 89 Agent) with active=1
+
+[System] Added agent 62 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-58 (Project 89 Agent) with active=1
+
+[System] Added agent 63 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-59 (Project 89 Agent) with active=1
+
+[System] Added agent 64 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-60 (Project 89 Agent) with active=1
+
+[System] Added agent 65 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-61 (Project 89 Agent) with active=1
+
+[System] Added agent 66 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-62 (Project 89 Agent) with active=1
+
+[System] Added agent 67 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-63 (Project 89 Agent) with active=1
+
+[System] Added agent 68 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-64 (Project 89 Agent) with active=1
+
+[System] Added agent 69 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-65 (Project 89 Agent) with active=1
+
+[System] Added agent 70 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-66 (Project 89 Agent) with active=1
+
+[System] Added agent 71 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-67 (Project 89 Agent) with active=1
+
+[System] Added agent 72 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-68 (Project 89 Agent) with active=1
+
+[System] Added agent 73 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-69 (Project 89 Agent) with active=1
+
+[System] Added agent 74 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-70 (Project 89 Agent) with active=1
+
+[System] Added agent 75 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-71 (Project 89 Agent) with active=1
+
+[System] Added agent 76 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-72 (Project 89 Agent) with active=1
+
+[System] Added agent 77 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-73 (Project 89 Agent) with active=1
+
+[System] Added agent 78 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-74 (Project 89 Agent) with active=1
+
+[System] Added agent 79 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-75 (Project 89 Agent) with active=1
+
+[System] Added agent 80 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-76 (Project 89 Agent) with active=1
+
+[System] Added agent 81 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-77 (Project 89 Agent) with active=1
+
+[System] Added agent 82 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-78 (Project 89 Agent) with active=1
+
+[System] Added agent 83 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-79 (Project 89 Agent) with active=1
+
+[System] Added agent 84 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-80 (Project 89 Agent) with active=1
+
+[System] Added agent 85 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-81 (Project 89 Agent) with active=1
+
+[System] Added agent 86 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-82 (Project 89 Agent) with active=1
+
+[System] Added agent 87 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-83 (Project 89 Agent) with active=1
+
+[System] Added agent 88 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-84 (Project 89 Agent) with active=1
+
+[System] Added agent 89 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-85 (Project 89 Agent) with active=1
+
+[System] Added agent 90 to room Backroom-5
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-86 (Project 89 Agent) with active=1
+
+[System] Added agent 91 to room Backroom-1
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-87 (Project 89 Agent) with active=1
+
+[System] Added agent 92 to room Backroom-2
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-88 (Project 89 Agent) with active=1
+
+[System] Added agent 93 to room Backroom-3
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Created agent: Project89-Agent-89 (Project 89 Agent) with active=1
+
+[System] Added agent 94 to room Backroom-4
+
+[System] Lifecycle hook subscribed to beforeSystems (once)
+
+[System] Simulation started.
+
+[Processing 89 agents] GoalPlanningSystem
+
+[Processing 89 agents] PerceptionSystem2
+
+[Completed processing 0/89 agents] GoalPlanningSystem
+
+[Processing 89 agents] PlanningSystem
+
+[Completed processing 89/89 agents] PlanningSystem
+
+C:\Users\Chris\argOS-1\node_modules\discord.js\src\client\websocket\WebSocketManager.js:139
+    const invalidToken = new DiscordjsError(ErrorCodes.TokenInvalid);
+                         ^
+
+Error [TokenInvalid]: An invalid token was provided.
+    at WebSocketManager.connect (C:\Users\Chris\argOS-1\node_modules\discord.js\src\client\websocket\WebSocketManager.js:139:26)
+    at Client.login (C:\Users\Chris\argOS-1\node_modules\discord.js\src\client\Client.js:229:21)
+    at initializeDiscord (C:\Users\Chris\argOS-1\src\discord\index.ts:68:10)
+    at <anonymous> (C:\Users\Chris\argOS-1\src\server\index.ts:94:9) {
+  code: 'TokenInvalid'
+}
+
+Node.js v22.12.0

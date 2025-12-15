@@ -26,10 +26,8 @@ import { createReportingSystem } from "../systems/reporting";
 import { createDiscordReportSystem } from '../systems/discordReportSystem';
 
 // Validate required environment variables
-if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-  throw new Error(
-    "GOOGLE_GENERATIVE_AI_API_KEY is required but not set in environment variables"
-  );
+if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY && process.env.GOOGLE_GENERATIVE_AI_API_KEY !== 'dummy') {
+  console.warn("GOOGLE_GENERATIVE_AI_API_KEY is not set. Simulation may fail.");
 }
 
 export type SystemFactory = (
@@ -63,8 +61,8 @@ const defaultConsciousSystems = [
   ThinkingSystem2.create,
   ActionSystem.create,
   CleanupSystem.create,
-  createReportingSystem,
-  createDiscordReportSystem,
+  createReportingSystem.create,
+  createDiscordReportSystem.create,
 ];
 
 const defaultSubconsciousSystems = [
@@ -151,6 +149,23 @@ export class SimulationRuntime extends EventEmitter {
 
     // Merge config with defaults
     const fullConfig = { ...DEFAULT_CONFIG, ...config };
+
+    // Register all components with the world - DISABLED for legacy components
+    /*
+    if (fullConfig.components) {
+        fullConfig.components.forEach((compDefinition: any) => {
+            try {
+                if (compDefinition.component) {
+                    registerComponent(this.world, compDefinition.component);
+                } else {
+                    registerComponent(this.world, compDefinition);
+                }
+            } catch (e) {
+                logger.error(`Failed to register component definition:`, { error: e });
+            }
+        });
+    }
+    */
 
     // Initialize system loops
     this.systemLoops = new Map();

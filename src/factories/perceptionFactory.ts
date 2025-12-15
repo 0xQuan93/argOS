@@ -71,6 +71,16 @@ export function gatherStimuliForAgent(
     try {
       // Skip if already processed
       if (processedStimuli.has(stimulusId)) continue;
+      
+      // Additional check to prevent cross-room leaks
+      // If the stimulus is in a room, it must match the agent's current room
+      const stimulusRooms = query(world, [Room]).filter(rid => isStimulusInRoom(world, stimulusId, rid));
+      if (stimulusRooms.length > 0) {
+         // It's associated with a room. If none of those rooms are the current room, skip it.
+         const isInCurrentRoom = isStimulusInRoom(world, stimulusId, currentRoom);
+         if (!isInCurrentRoom) continue;
+      }
+      
       processedStimuli.add(stimulusId);
 
       // Check if stimulus component exists and has required data

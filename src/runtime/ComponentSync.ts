@@ -35,10 +35,17 @@ export class ComponentSync {
   onWorldStateChange?: () => void;
 
   constructor(private world: World) {
+    console.log("DEBUG: ComponentSync constructor");
+    console.log("DEBUG: Agent:", Agent);
+    console.log("DEBUG: Room:", Room);
     this.setupSyncHooks();
   }
 
   private setupSyncHooks() {
+    if (!Agent) {
+        console.error("CRITICAL: Agent component is undefined!");
+        return;
+    }
     // Agent sync
     this.observers.push(
       observe(this.world, onSet(Agent), (eid, params) => {
