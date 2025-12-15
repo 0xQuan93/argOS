@@ -20,7 +20,7 @@ export const schema = z
 export const action = {
   name: "move",
   description:
-    "Move your presence to another room to explore or find other agents.",
+    "Move your presence to another room. Use this to find other agents or explore new areas. You cannot interact with agents in other rooms unless you move to them.",
   parameters: ["targetRoomName"],
   schema,
 };

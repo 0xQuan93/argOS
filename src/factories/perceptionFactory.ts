@@ -69,19 +69,33 @@ export function gatherStimuliForAgent(
 
   for (const stimulusId of stimuliSet) {
     try {
-      // Skip if already processed
-      if (processedStimuli.has(stimulusId)) continue;
-      
-      // Additional check to prevent cross-room leaks
-      // If the stimulus is in a room, it must match the agent's current room
-      const stimulusRooms = query(world, [Room]).filter(rid => isStimulusInRoom(world, stimulusId, rid));
-      if (stimulusRooms.length > 0) {
-         // It's associated with a room. If none of those rooms are the current room, skip it.
-         const isInCurrentRoom = isStimulusInRoom(world, stimulusId, currentRoom);
-         if (!isInCurrentRoom) continue;
-      }
-      
-      processedStimuli.add(stimulusId);
+          // Skip if already processed
+          if (processedStimuli.has(stimulusId)) continue;
+          
+          // Additional check to prevent cross-room leaks
+          // If the stimulus is in a room, it must match the agent's current room
+          const stimulusRooms = query(world, [Room]).filter(rid => isStimulusInRoom(world, stimulusId, rid));
+          if (stimulusRooms.length > 0) {
+             // It's associated with a room. If none of those rooms are the current room, skip it.
+             const isInCurrentRoom = isStimulusInRoom(world, stimulusId, currentRoom);
+             if (!isInCurrentRoom) continue;
+          }
+
+          // THOUGHT PRIVACY CHECK
+          // Agents should NOT perceive thoughts unless they are the source
+          if (Stimulus.type[stimulusId] === StimulusType.THOUGHT) {
+              const isSelf = hasStimulusSource(world, stimulusId, eid);
+              if (!isSelf) continue;
+          }
+          
+          // SELF-SPEECH FILTER
+          // Agents should NOT perceive their own speech as external stimuli
+          if (Stimulus.type[stimulusId] === StimulusType.AUDITORY) {
+              const isSelf = hasStimulusSource(world, stimulusId, eid);
+              if (isSelf) continue; // Skip own speech
+          }
+          
+          processedStimuli.add(stimulusId);
 
       // Check if stimulus component exists and has required data
       if (!Stimulus.type[stimulusId] || !Stimulus.source[stimulusId]) {

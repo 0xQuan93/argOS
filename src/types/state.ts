@@ -88,6 +88,7 @@ export interface AgentState {
   systemPrompt: string;
   active: boolean;
   platform: string;
+  roomId?: string; // Current room ID if any
   attention: number;
   perceptions: {
     narrative: string;

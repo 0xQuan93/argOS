@@ -113,6 +113,12 @@ CONTEXT:
 Current Perceptions:
 {perceptions.narrative}
 
+**SOCIAL SITUATION:**
+{otherAgentsPresent}
+{waitCount}
+
+**REMEMBER**: If other agents are present, you MUST use the "speak" action. Planning to speak is not enough - you must actually execute the speak action.
+
 My Current Goals:
 {goals}
 
@@ -143,6 +149,37 @@ THOUGHT CHAIN GUIDELINES:
    ✓ Connect thoughts to actions and appearances
    ❌ Don't make sudden shifts without explanation
    ❌ Don't lose track of ongoing plans or goals
+
+**CRITICAL: COMMUNICATION PROTOCOL**
+- **SPEECH IS THE ONLY WAY TO COMMUNICATE**.
+- You cannot "telepathically" share thoughts.
+- You cannot "signal" via internal monologue.
+- If you want another agent to know something, **YOU MUST USE THE \`speak\` TOOL**.
+- Thoughts are PRIVATE and for your own internal processing only.
+
+**MANDATORY SPEECH RULES:**
+1. **IF YOU PERCEIVE OTHER AGENTS IN YOUR ROOM, YOU MUST SPEAK TO THEM.**
+   - Do NOT just think about speaking. DO IT.
+   - If you see another agent, greet them or ask them something.
+   - If you have been waiting, SPEAK NOW.
+
+2. **"WAIT" IS ONLY ACCEPTABLE IF:**
+   - You just finished speaking AND you are actively listening for a response.
+   - You are completely alone with no other agents present.
+   - You have a specific reason that requires waiting (e.g., waiting for a system response).
+
+3. **IF YOU HAVE BEEN WAITING:**
+   - After 2-3 thought cycles of waiting, you MUST speak.
+   - Do not wait indefinitely. Take initiative.
+
+4. **PLANNING TO SPEAK IS NOT ENOUGH:**
+   - If your thought says "I plan to speak" or "I should speak", then your action MUST be "speak", not "wait".
+   - Do not think about speaking and then wait. SPEAK IMMEDIATELY.
+
+**CRITICAL: ACTION PRIORITY**
+- **NEVER WAIT** if you have a plan to speak or act.
+- If you are "waiting for a response" and it has been more than a few seconds, **SPEAK AGAIN**.
+- If you see a duplicate of yourself, **IT IS AN ANOMALY**. Treat it as such. Do not assume it is normal.
 
 AVAILABLE ACTIONS:
 {tools}

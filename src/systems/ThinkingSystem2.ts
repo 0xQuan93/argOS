@@ -6,7 +6,7 @@ import { createSystem } from "./System";
 import { processConcurrentAgents } from "../utils/system-utils";
 import { ThoughtEntry } from "../components/Thought";
 import { getActivePlans } from "../components/Plans";
-import { getRoomInfo } from "../utils/queries";
+import { getRoomInfo, getRoomOccupants, getAgentRoom } from "../utils/queries";
 
 export const ThinkingSystem2 = createSystem(
   (runtime) => async (world: World) => {
@@ -43,6 +43,21 @@ export const ThinkingSystem2 = createSystem(
 
         // Get room information
         const roomInfo = getRoomInfo(world, eid);
+        
+        // Check if there are other agents in the room
+        const roomEid = getAgentRoom(world, eid);
+        let otherAgentsPresent = false;
+        let waitCount = 0;
+        if (roomEid) {
+          const occupants = getRoomOccupants(world, roomEid);
+          otherAgentsPresent = occupants.length > 1; // More than just this agent
+          
+          // Count recent "wait" actions
+          const recentActions = (Thought.entries[eid] || [] as ThoughtEntry[])
+            .slice(-5)
+            .filter(entry => entry.context?.metadata?.action?.tool === "wait");
+          waitCount = recentActions.length;
+        }
 
         // Get current goals and plans
         const currentGoals = (Goal.current[eid] || []).map((goal) => ({
@@ -80,7 +95,8 @@ export const ThinkingSystem2 = createSystem(
         }));
 
         try {
-          // Generate thought with chain of thought context
+          // SKIP THOUGHT GENERATION - Go straight to action
+          // Generate action directly from perceptions and context
           const thoughtResult = await generateThought({
             id: String(eid),
             name: Agent.name[eid],
@@ -101,6 +117,12 @@ export const ThinkingSystem2 = createSystem(
                 .slice(-3)
                 .flatMap((entry) => entry.context?.metadata?.stimuli || []),
             },
+            otherAgentsPresent: otherAgentsPresent 
+              ? "⚠️ OTHER AGENTS ARE IN YOUR ROOM. YOU MUST SPEAK TO THEM. DO NOT WAIT."
+              : "You are alone in this room.",
+            waitCount: waitCount > 2 
+              ? `⚠️ YOU HAVE WAITED ${waitCount} TIMES IN A ROW. YOU MUST SPEAK NOW.`
+              : `You have waited ${waitCount} time(s) recently.`,
             lastAction: Action.lastActionResult[eid],
             timeSinceLastAction: Action.lastActionTime[eid]
               ? Date.now() - Action.lastActionTime[eid]
@@ -109,7 +131,7 @@ export const ThinkingSystem2 = createSystem(
               type: entry.type,
               content: entry.content,
               timestamp: entry.timestamp,
-            })),
+            })).filter(entry => entry.type === "thought"), // Only include own thoughts
             availableTools: runtime.getActionManager().getEntityTools(eid),
             goals: Goal.current[eid] || [],
             completedGoals: Goal.completed[eid] || [],
@@ -136,30 +158,37 @@ export const ThinkingSystem2 = createSystem(
             },
           });
 
-          // Create new thought entry
+          // Store thought in component
           const newEntry: ThoughtEntry = {
-            id: Thought.lastEntryId[eid] + 1,
-            timestamp: Date.now(),
+            id: String(Date.now()),
             type: "thought",
             content: thoughtResult.thought,
+            timestamp: Date.now(),
             context: {
-              roomId: roomInfo.id,
               metadata: {
-                action: thoughtResult.action,
-                appearance: thoughtResult.appearance,
-                goals: currentGoals,
-                activePlans: activePlans,
+                goals: thoughtResult.goals,
+                plans: thoughtResult.activePlans,
               },
             },
           };
 
-          // Update Thought component
-          const updatedEntries = [...(Thought.entries[eid] || []), newEntry];
+          const currentEntries = (Thought.entries[eid] || []) as ThoughtEntry[];
           setComponent(world, eid, Thought, {
-            entries: updatedEntries,
-            lastEntryId: newEntry.id,
+            entries: [...currentEntries, newEntry],
+            lastEntryId: Date.now(),
             lastUpdate: Date.now(),
           });
+
+          // Emit thought event
+          runtime.getEventBus().emitRoomEvent(
+            String(roomEid),
+            "thought",
+            {
+              agentName: Agent.name[eid],
+              content: thoughtResult.thought,
+            },
+            String(eid)
+          );
 
           // Handle action if present
           if (thoughtResult.action) {
@@ -171,6 +200,7 @@ export const ThinkingSystem2 = createSystem(
           }
 
           // Update appearance if present
+
           if (thoughtResult.appearance) {
             setComponent(world, eid, Appearance, {
               description:
@@ -193,22 +223,12 @@ export const ThinkingSystem2 = createSystem(
             });
           }
 
-          // Emit thought event
-          runtime.eventBus.emitAgentEvent(eid, "thought", "thought", {
-            content: thoughtResult.thought,
-            thoughtEntryId: newEntry.id,
-            hasAction: !!thoughtResult.action,
-            hasAppearanceChange: !!thoughtResult.appearance,
-          });
+          // NO THOUGHT EVENTS - Don't emit thought events
+          // Only log actions
 
-          logger.debug(`Generated thought for agent ${Agent.name[eid]}:`, {
-            thoughtId: newEntry.id,
-            hasAction: !!thoughtResult.action,
-            hasAppearanceChange: !!thoughtResult.appearance,
-          });
+          logger.debug(`Agent ${Agent.name[eid]} processed - hasAction: ${!!thoughtResult.action}, hasAppearanceChange: ${!!thoughtResult.appearance}`);
 
           return {
-            thoughtId: newEntry.id,
             hasAction: !!thoughtResult.action,
             hasAppearanceChange: !!thoughtResult.appearance,
           };

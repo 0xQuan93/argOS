@@ -1,5 +1,6 @@
 import * as React from "react";
 import { AgentState } from "../../../types";
+import { useSimulationStore } from "../../../state/simulation"; // Added import
 
 interface CommandBarProps {
   isRunning: boolean;
@@ -15,6 +16,7 @@ export function CommandBar({
   agents,
 }: CommandBarProps) {
   const [elapsedTime, setElapsedTime] = React.useState(0);
+  const { isAutoScan, setIsAutoScan } = useSimulationStore(); // Import needed
 
   React.useEffect(() => {
     if (!isRunning) {
@@ -94,6 +96,18 @@ export function CommandBar({
             }`}
           >
             ⟲ RESET
+          </button>
+          
+          {/* Auto Scan Toggle */}
+          <button
+            onClick={() => setIsAutoScan(!isAutoScan)}
+            className={`px-3 py-1 rounded font-mono text-sm transition-all duration-300 ${
+              isAutoScan
+                ? "bg-purple-900/30 text-purple-400 border border-purple-500/50 animate-pulse"
+                : "bg-black/30 text-gray-400 border border-gray-700/50 hover:bg-gray-800"
+            }`}
+          >
+            {isAutoScan ? "◎ SCANNING" : "○ AUTO-SCAN"}
           </button>
         </div>
 

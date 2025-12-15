@@ -7,6 +7,7 @@ import { ActionContent, World } from "../types";
 import { ActionResultType, Agent } from "../components";
 import { SimulationRuntime } from "../runtime/SimulationRuntime";
 import { actions } from ".";
+import { query } from "bitecs";
 
 export const schema = z
   .object({
@@ -25,7 +26,7 @@ export const schema = z
     systemPrompt: z
       .string()
       .describe(
-        "The core instructions that define the agent's personality, knowledge, and behavior patterns."
+        "The core instructions that define the agent's personality, knowledge, and behavior patterns. MUST include: 'Speech is your ONLY tool for communication. Thoughts are private.'"
       ),
 
     appearance: z
@@ -66,6 +67,12 @@ export const action = {
   schema,
 };
 
+// Track global spawn state
+const SPAWN_STATE = {
+  lastSpawnTime: 0,
+  minInterval: 10000, // Minimum 10s between any spawns globally
+};
+
 export async function execute(
   world: World,
   creatorEid: number,
@@ -82,22 +89,58 @@ export async function execute(
       action: "spawnAgent",
       data: {
         entityId: -1,
-        metadata: {
-          error: "Creator not in room",
-          name: parameters.name,
-          role: parameters.role,
-        },
+        metadata: { error: "Creator not in room" },
       },
     };
   }
 
+  // Count current agents
+  const agents = query(world, [Agent]);
+  const currentCount = agents.length;
+
+  // Generate a unique name
+  let name = parameters.name;
+  let counter = 2;
+  const existingNames = new Set(agents.map(eid => Agent.name[eid]));
+  
+  while (existingNames.has(name)) {
+      name = `${parameters.name}-${counter}`;
+      counter++;
+  }
+
+  // Global Hard Limit
+  if (currentCount >= 89) {
+      return {
+          success: false,
+          result: "Maximum agent capacity reached (89). The Loom is full.",
+          timestamp: Date.now(),
+          action: "spawnAgent",
+          data: { entityId: -1, metadata: { error: "Max capacity" } }
+      };
+  }
+
+  // Rate limiting
+  const now = Date.now();
+  if (now - SPAWN_STATE.lastSpawnTime < SPAWN_STATE.minInterval) {
+      return {
+          success: false,
+          result: "The Loom is stabilizing. Wait before weaving new threads.",
+          timestamp: Date.now(),
+          action: "spawnAgent",
+          data: { entityId: -1, metadata: { error: "Cooldown" } }
+      };
+  }
+
   const newAgentEid = createAgentFactory(world, {
     ...parameters,
+    name, // Use unique name
     tools: parameters.tools as Array<keyof typeof actions>,
     active: 1,
   });
 
-  const result = `Successfully created new agent "${parameters.name}" (${parameters.role}) with id: ${newAgentEid}`;
+  SPAWN_STATE.lastSpawnTime = now;
+
+  const result = `Successfully created new agent "${name}" (${parameters.role}) with id: ${newAgentEid}. Population is now ${currentCount + 1}.`;
 
   logger.agent(newAgentEid, result, Agent.name[creatorEid]);
 

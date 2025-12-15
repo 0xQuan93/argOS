@@ -130,6 +130,8 @@ export async function generateThought(
         null,
         2
       ),
+      otherAgentsPresent: (state as any).otherAgentsPresent || "You are alone.",
+      waitCount: (state as any).waitCount || "You have not been waiting.",
     });
 
     // Get LLM response

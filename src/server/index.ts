@@ -181,6 +181,23 @@ function setupRuntimeEventHandlers(runtime: SimulationRuntime) {
         };
         sendMessage(client, message);
       }
+      
+      // BROADCAST ACTIVITY SIGNAL
+      // If the event is speech or action, alert ALL clients so they can auto-switch
+      if (
+        (data.type === 'speech' || data.type === 'action') && 
+        client.readyState === WS.OPEN
+      ) {
+          sendMessage(client, {
+              type: "ACTIVITY",
+              roomId,
+              timestamp: Date.now(),
+              data: {
+                  type: data.type,
+                  description: data.content?.message || data.content?.action || "Activity detected"
+              }
+          } as any); // Type assertion until ServerMessage type is updated
+      }
     });
   });
 
@@ -286,7 +303,29 @@ wss.on("connection", (ws: WS) => {
         });
         break;
 
-      case "SUBSCRIBE_ROOM": {
+          case "START":
+            if (runtime) runtime.start();
+            break;
+          case "STOP":
+            if (runtime) runtime.stop();
+            break;
+          case "RESET":
+            if (runtime) runtime.reset();
+            // Optionally setup again or just leave empty?
+            // Usually we might want to re-run setupProject89 but reset() clears entities.
+            // For now, let's just clear entities and maybe the client should send START again which we might need to handle re-init.
+            // A simple way is to just exit process and let nodemon restart or re-init here.
+            // Re-init logic:
+            (async () => {
+                const setup = await setupProject89();
+                runtime = setup.runtime;
+                setupRuntimeEventHandlers(runtime);
+                initializeDiscord(runtime);
+                runtime.start();
+            })();
+            break;
+
+          case "SUBSCRIBE_ROOM": {
         const { roomId } = message;
         if (!roomId) break;
         

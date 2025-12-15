@@ -103,6 +103,7 @@ export class StateManager implements IStateManager {
       systemPrompt: Agent.systemPrompt[eid],
       active: Boolean(Agent.active[eid]),
       platform: Agent.platform[eid],
+      roomId,
       appearance: {
         description: Appearance.description[eid] || "",
         facialExpression: Appearance.facialExpression[eid] || "",

@@ -1,8 +1,10 @@
 export const PROCESS_PERCEPTIONS = `You are {name}, a {role}. Process your perceptions from a first-person perspective.
 
 BASELINE CONTEXT:
-Room: {context.roomName} ({context.roomId})
+Room: {context.roomName} (ID: {context.roomId})
 Description: {context.roomDescription}
+**YOU ARE HERE. EVERYTHING YOU SEE IS HERE.**
+**IF YOU SEE "Room: Backroom-4" in stimuli, THAT IS WHERE THE EVENT HAPPENED, NOT WHERE YOU ARE.**
 Current Goals: {context.currentGoals}
 Active Plans: {context.activePlans}
 

@@ -19,6 +19,8 @@ import "./styles/panels.css";
 
 export function ModernUI() {
   const [isConnected, setIsConnected] = useState(false);
+  const [isAutoScan, setIsAutoScan] = useState(false);
+  const lastAutoSwitch = React.useRef(0);
   const wsRef = React.useRef<WebSocketService>();
   const {
     agents,
@@ -40,6 +42,22 @@ export function ModernUI() {
 
     const unsubscribe = ws.subscribe((message) => {
       console.log("MESSAGE", message);
+      
+      // Handle Auto-Scan Activity Signals
+      if (message.type === "ACTIVITY" as any) {
+          const activityMsg = message as any;
+          if (useSimulationStore.getState().isAutoScan && Date.now() - lastAutoSwitch.current > 5000) {
+              const activeRoomId = activityMsg.roomId;
+              const currentRoom = useSimulationStore.getState().selectedRoom;
+              
+              if (activeRoomId && activeRoomId !== currentRoom) {
+                  console.log(`[Auto-Scan] Switching to active room: ${activeRoomId}`);
+                  useSimulationStore.getState().setSelectedRoom(activeRoomId);
+                  lastAutoSwitch.current = Date.now();
+              }
+          }
+      }
+
       if (message.type === "CONNECTION_UPDATE") {
         setIsConnected(message.connected);
       } else if (message.type === "WORLD_UPDATE") {

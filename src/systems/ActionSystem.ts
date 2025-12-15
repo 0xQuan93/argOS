@@ -114,6 +114,9 @@ export const ActionSystem = createSystem<SystemConfig>(
       );
 
       // Broadcast action result to room
+      // If the action is NOT 'speak', we should check if it produces a stimulus.
+      // For now, we only broadcast actions for UI visualization.
+      // Perception filtering in perceptionFactory handles what agents SEE.
       runtime.eventBus.emitRoomEvent(
         roomEid,
         "action",

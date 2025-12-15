@@ -45,13 +45,14 @@ export const RoomSystem = createSystem<SystemConfig>(
         const stimulusId = createVisualStimulus(
           world,
           agentId,
-          `${appearance.baseDescription} ${
+          `${Agent.name[agentId]}: ${appearance.baseDescription} ${
             appearance.currentAction || ""
           }`.trim(),
           {
             metadata: {
               appearance,
               isUser: Agent.name[agentId] === "User",
+              agentName: Agent.name[agentId], // Explicitly add name to metadata
             },
             source: StimulusSourceEnum.ROOM,
             decay: 0,

@@ -76,17 +76,17 @@ const DEFAULT_CONFIG: RuntimeConfig = {
   systemLoops: [
     {
       level: ConsciousnessLevel.CONSCIOUS,
-      updateInterval: 10000, // Fast updates for conscious processes
+      updateInterval: 2000, // Fast updates for conscious processes (2s for snappy conversation)
       systems: defaultConsciousSystems,
     },
     {
       level: ConsciousnessLevel.SUBCONSCIOUS,
-      updateInterval: 25000, // Slower updates for background processes
+      updateInterval: 5000, // Slower updates for background processes
       systems: defaultSubconsciousSystems,
     },
     {
       level: ConsciousnessLevel.UNCONSCIOUS,
-      updateInterval: 50000, // Very slow updates for maintenance processes
+      updateInterval: 10000, // Very slow updates for maintenance processes
       systems: defaultUnconsciousSystems,
     },
   ],

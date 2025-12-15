@@ -14,17 +14,19 @@ interface SimulationState {
   relationships: NetworkLink[];
   selectedAgent: string | null;
   selectedRoom: string | null;
+  isAutoScan: boolean;
   isRunning: boolean;
-  setSelectedAgent: (agent: string | null) => void;
-  setSelectedRoom: (room: string | null) => void;
-  setAgents: (
-    agents: AgentState[] | ((prev: AgentState[]) => AgentState[])
-  ) => void;
-  setRooms: (rooms: RoomState[] | ((prev: RoomState[]) => RoomState[])) => void;
+  
+  // Actions
+  setAgents: (agents: AgentState[]) => void;
+  setRooms: (rooms: RoomState[]) => void;
   setRelationships: (relationships: NetworkLink[]) => void;
-  setIsRunning: (isRunning: boolean) => void;
   addLog: (log: ServerMessage) => void;
   clearLogs: () => void;
+  setSelectedAgent: (id: string | null) => void;
+  setSelectedRoom: (room: string | null) => void;
+  setIsRunning: (isRunning: boolean) => void;
+  setIsAutoScan: (isAuto: boolean) => void;
 }
 
 export const useSimulationStore = create<SimulationState>((set, get) => ({
@@ -35,8 +37,8 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   selectedAgent: null,
   selectedRoom: null,
   isRunning: false,
-  setSelectedAgent: (agent) => set({ selectedAgent: agent }),
-  setSelectedRoom: (room) => set({ selectedRoom: room }),
+  isAutoScan: false,
+
   setAgents: (agents) =>
     set({
       agents: typeof agents === "function" ? agents(get().agents) : agents,
@@ -46,7 +48,10 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       rooms: typeof rooms === "function" ? rooms(get().rooms || []) : rooms,
     }),
   setRelationships: (relationships) => set({ relationships }),
-  setIsRunning: (isRunning) => set({ isRunning }),
   addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
   clearLogs: () => set({ logs: [] }),
+  setSelectedAgent: (agent) => set({ selectedAgent: agent }),
+  setSelectedRoom: (room) => set({ selectedRoom: room }),
+  setIsRunning: (isRunning) => set({ isRunning }),
+  setIsAutoScan: (isAutoScan) => set({ isAutoScan }),
 }));
